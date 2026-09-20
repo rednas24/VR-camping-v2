@@ -1718,7 +1718,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bb381dc124d0a4090a6086b387886c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AxeHit
-  minimumHitForce: 2.5
+  minimumHitForce: 0.7
 --- !u!1 &681192694
 GameObject:
   m_ObjectHideFlags: 0
@@ -3184,7 +3184,8 @@ MonoBehaviour:
     _unselectMode: 0
   _movementProvider: {fileID: 0}
   _handAligment: 0
-  _handGrabPoses: []
+  _handGrabPoses:
+  - {fileID: 0}
 --- !u!1 &1660234998
 GameObject:
   m_ObjectHideFlags: 0
