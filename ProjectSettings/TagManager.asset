@@ -32,6 +32,8 @@ TagManager:
   - QDSUIToggleCheckboxRadio
   - QDSUIToggleThumbnail
   - Firewood
+  - FireoodPiece
+  - FirewoodPiece
   layers:
   - Default
   - TransparentFX

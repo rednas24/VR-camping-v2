@@ -2,11 +2,34 @@ using UnityEngine;
 
 public class Firewood : MonoBehaviour
 {
-    public GameObject splitPiecePrefab;
+    [Header("Splitting")]
+    [SerializeField] private GameObject splitPiecePrefab;
+    [SerializeField] private float requiredForce = 10f;
 
+    private float accumulatedForce = 0f;
     private bool hasSplit = false;
 
-    public void Split()
+    public void AddHitForce(float hitForce)
+    {
+        if (hasSplit)
+            return;
+
+        accumulatedForce += hitForce;
+
+        Debug.Log(
+            "Wood force: " +
+            accumulatedForce +
+            " / " +
+            requiredForce
+        );
+
+        if (accumulatedForce >= requiredForce)
+        {
+            Split();
+        }
+    }
+
+    private void Split()
     {
         if (hasSplit)
             return;
@@ -14,19 +37,20 @@ public class Firewood : MonoBehaviour
         hasSplit = true;
 
         Vector3 position = transform.position;
-
-        Destroy(gameObject);
+        Quaternion rotation = transform.rotation;
 
         Instantiate(
             splitPiecePrefab,
             position + transform.right * 0.25f,
-            transform.rotation
+            rotation
         );
 
         Instantiate(
             splitPiecePrefab,
             position - transform.right * 0.25f,
-            transform.rotation
+            rotation
         );
+
+        Destroy(gameObject);
     }
 }
