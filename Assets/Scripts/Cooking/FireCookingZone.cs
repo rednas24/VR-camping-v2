@@ -12,4 +12,15 @@ public class FireCookingZone : MonoBehaviour
             cooking.StartCooking();
         }
     }
+
+    private void OnTriggerExit(Collider other)
+    {
+        PanCooking cooking =
+            other.GetComponentInParent<PanCooking>();
+
+        if (cooking != null)
+        {
+            cooking.StopCooking();
+        }
+    }
 }

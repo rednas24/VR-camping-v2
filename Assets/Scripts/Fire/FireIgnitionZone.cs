@@ -5,11 +5,23 @@ public class FireIgnitionZone : MonoBehaviour
     public GameObject fireParticles;
     public BonfireWoodManager woodManager;
 
+    [Header("Cooking")]
+    public GameObject cookingZone;
+
     public float ignitionTime = 1f;
 
     private float timer = 0f;
     private bool lighterInside = false;
     private bool fireLit = false;
+
+    private void Start()
+    {
+        // Make sure the cooking zone starts disabled
+        if (cookingZone != null)
+        {
+            cookingZone.SetActive(false);
+        }
+    }
 
     private void Update()
     {
@@ -59,6 +71,12 @@ public class FireIgnitionZone : MonoBehaviour
         fireLit = true;
 
         fireParticles.SetActive(true);
+
+        // Enable cooking zone
+        if (cookingZone != null)
+        {
+            cookingZone.SetActive(true);
+        }
 
         Debug.Log("Bonfire ignited!");
     }
