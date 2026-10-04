@@ -1,4 +1,5 @@
 using UnityEngine;
+using Oculus.Interaction.HandGrab;
 
 public class BonfireWoodManager : MonoBehaviour
 {
@@ -20,6 +21,19 @@ public class BonfireWoodManager : MonoBehaviour
 
     public void WoodPlaced()
     {
+        // Get the wood that was just placed
+        GameObject placedWood = woodSlots[currentSlot];
+
+        // Disable Distance Hand Grab
+        DistanceHandGrabInteractable distanceGrab =
+            placedWood.GetComponent<DistanceHandGrabInteractable>();
+
+        if (distanceGrab != null)
+        {
+            distanceGrab.enabled = false;
+        }
+
+        // Move to the next slot
         currentSlot++;
 
         if (currentSlot < woodSlots.Length)

@@ -34,6 +34,7 @@ TagManager:
   - Firewood
   - FireoodPiece
   - FirewoodPiece
+  - Lighter
   layers:
   - Default
   - TransparentFX

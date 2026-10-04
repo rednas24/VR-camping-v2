@@ -371,8 +371,8 @@ MonoBehaviour:
   isPlaced: 0
   halfLogsPrefab: {fileID: 8398122911348272785, guid: b83b60609427bce4db25d96b39ab8282, type: 3}
   splitSpawnPoint: {fileID: 0}
-  splitForce: 2
-  splitTorque: 1
+  splitForce: 0.3
+  splitTorque: 0.4
 --- !u!114 &7147176104412971344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -720,8 +720,8 @@ MonoBehaviour:
   isPlaced: 0
   halfLogsPrefab: {fileID: 8398122911348272785, guid: b83b60609427bce4db25d96b39ab8282, type: 3}
   splitSpawnPoint: {fileID: 0}
-  splitForce: 2
-  splitTorque: 1
+  splitForce: 0.3
+  splitTorque: 0.4
 --- !u!114 &1042575179419375256
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
 using UnityEngine;
 using Oculus.Interaction;
+using Oculus.Interaction.HandGrab;
 
 public class LogSnapPlacement : MonoBehaviour
 {
@@ -77,11 +78,6 @@ public class LogSnapPlacement : MonoBehaviour
                 snapPose.rotation,
                 targetPose.rotation);
 
-        Debug.Log(
-            $"Log snapping | Distance: {positionDistance:F3}m | " +
-            $"Rotation: {rotationDifference:F2}°"
-        );
-
         if (positionDistance <= positionTolerance &&
             rotationDifference <= rotationTolerance)
         {
@@ -111,10 +107,21 @@ public class LogSnapPlacement : MonoBehaviour
                 targetRootRotation
             );
 
+            // Tell WoodLog that the log has been placed
             woodLog.PlaceLog();
+
+            // Disable Distance Hand Grab
+            DistanceHandGrabInteractable distanceGrab =
+                GetComponentInChildren<DistanceHandGrabInteractable>();
+
+            if (distanceGrab != null)
+            {
+                distanceGrab.enabled = false;
+            }
 
             Debug.Log("================================");
             Debug.Log("SNAP COMPLETE - LOG IS NOW LOCKED!");
+            Debug.Log("DISTANCE GRAB DISABLED!");
             Debug.Log("================================");
         }
     }
