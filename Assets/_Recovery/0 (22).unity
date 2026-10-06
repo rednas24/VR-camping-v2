@@ -16077,11 +16077,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4649752996267244716, guid: 86f91688169be7446ba4bcd94352a5f8, type: 3}
       propertyPath: InitialModule.startSize.scalar
-      value: 0.0075311847
+      value: 0.009279173
       objectReference: {fileID: 0}
     - target: {fileID: 4649752996267244716, guid: 86f91688169be7446ba4bcd94352a5f8, type: 3}
       propertyPath: EmissionModule.rateOverTime.scalar
-      value: 2.8241937
+      value: 3.4796891
       objectReference: {fileID: 0}
     - target: {fileID: 5175894024921488433, guid: 86f91688169be7446ba4bcd94352a5f8, type: 3}
       propertyPath: fireIntensity
@@ -16089,11 +16089,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8195490471288966203, guid: 86f91688169be7446ba4bcd94352a5f8, type: 3}
       propertyPath: InitialModule.startSize.scalar
-      value: 0.0018827962
+      value: 0.0023197932
       objectReference: {fileID: 0}
     - target: {fileID: 8195490471288966203, guid: 86f91688169be7446ba4bcd94352a5f8, type: 3}
       propertyPath: EmissionModule.rateOverTime.scalar
-      value: 1.8827963
+      value: 2.3197932
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17428,6 +17428,6 @@ SceneRoots:
   - {fileID: 2087857772}
   - {fileID: 1318989225}
   - {fileID: 28749336}
-  - {fileID: 357971463}
   - {fileID: 1195064589}
+  - {fileID: 357971463}
   - {fileID: 1403608724}
