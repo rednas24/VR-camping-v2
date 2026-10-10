@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Oculus.Interaction;
 using Oculus.Interaction.HandGrab;
@@ -14,6 +15,9 @@ public class LogSnapPlacement : MonoBehaviour
     public float rotationTolerance = 5f;
 
     private bool placementTriggered = false;
+
+    // All grab interactables on this log, cached so we can lock/unlock them.
+    private readonly List<MonoBehaviour> _grabInteractables = new List<MonoBehaviour>();
 
     private void Awake()
     {
@@ -33,6 +37,45 @@ public class LogSnapPlacement : MonoBehaviour
                 snapPose = foundSnapPose;
             }
         }
+
+        CacheGrabInteractables();
+    }
+
+    private void CacheGrabInteractables()
+    {
+        _grabInteractables.Clear();
+        _grabInteractables.AddRange(GetComponentsInChildren<HandGrabInteractable>(true));
+        _grabInteractables.AddRange(GetComponentsInChildren<DistanceHandGrabInteractable>(true));
+        _grabInteractables.AddRange(GetComponentsInChildren<GrabInteractable>(true));
+        _grabInteractables.AddRange(GetComponentsInChildren<DistanceGrabInteractable>(true));
+    }
+
+    /// <summary>
+    /// Prevents the player from picking the log up again.
+    /// Disabling an interactable also releases any hand currently holding it.
+    /// </summary>
+    public void LockLog()
+    {
+        foreach (MonoBehaviour grab in _grabInteractables)
+        {
+            if (grab != null)
+                grab.enabled = false;
+        }
+    }
+
+    /// <summary>
+    /// Makes the log grabbable again and re-arms snap detection.
+    /// Only needed if the same object is reused after splitting.
+    /// </summary>
+    public void UnlockLog()
+    {
+        foreach (MonoBehaviour grab in _grabInteractables)
+        {
+            if (grab != null)
+                grab.enabled = true;
+        }
+
+        placementTriggered = false;
     }
 
     private void Update()
@@ -110,19 +153,10 @@ public class LogSnapPlacement : MonoBehaviour
             // Tell WoodLog that the log has been placed
             woodLog.PlaceLog();
 
-            // Disable Distance Hand Grab
-            DistanceHandGrabInteractable distanceGrab =
-                GetComponentInChildren<DistanceHandGrabInteractable>();
+            // Lock every grab interactable so the player can't pick it up again
+            LockLog();
 
-            if (distanceGrab != null)
-            {
-                distanceGrab.enabled = false;
-            }
-
-            Debug.Log("================================");
             Debug.Log("SNAP COMPLETE - LOG IS NOW LOCKED!");
-            Debug.Log("DISTANCE GRAB DISABLED!");
-            Debug.Log("================================");
         }
     }
 }
