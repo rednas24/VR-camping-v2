@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 public class PanCooking : MonoBehaviour
@@ -29,7 +30,6 @@ public class PanCooking : MonoBehaviour
 
     public void CanPlaced()
     {
-        // Don't allow another can to be placed after cooking is finished
         if (cookingFinished)
             return;
 
@@ -40,21 +40,11 @@ public class PanCooking : MonoBehaviour
 
     public void StartCooking()
     {
-        // No can in the pan
-        if (!canPlaced)
-            return;
-
-        // Already finished
-        if (cookingFinished)
-            return;
-
-        // Already cooking
-        if (cooking)
+        if (!canPlaced || cookingFinished || cooking)
             return;
 
         cooking = true;
 
-        // Start cooking smoke
         if (cookingSmoke != null)
         {
             cookingSmoke.Play();
@@ -70,7 +60,6 @@ public class PanCooking : MonoBehaviour
 
         cooking = false;
 
-        // Stop cooking smoke
         if (cookingSmoke != null)
         {
             cookingSmoke.Stop();
@@ -94,12 +83,30 @@ public class PanCooking : MonoBehaviour
 
     private void FinishCooking()
     {
-        // Make sure this can can never cook/pop again
+        if (cookingFinished)
+            return;
+
+        if (closedCan == null || openCan == null)
+        {
+            Debug.LogError(
+                "PanCooking: Assign both Closed Can and Open Can."
+            );
+
+            cooking = false;
+
+            if (cookingSmoke != null)
+            {
+                cookingSmoke.Stop();
+            }
+
+            return;
+        }
+
+        // Prevent cooking and completion from running twice.
         cooking = false;
         cookingFinished = true;
         canPlaced = false;
 
-        // Stop cooking smoke
         if (cookingSmoke != null)
         {
             cookingSmoke.Stop();
@@ -107,36 +114,37 @@ public class PanCooking : MonoBehaviour
 
         Debug.Log("Can finished cooking!");
 
-        // Save the closed can's exact world position and rotation
+        // Preserve the original can's world position and rotation.
         Vector3 spawnPosition = closedCan.transform.position;
         Quaternion spawnRotation = closedCan.transform.rotation;
 
-        // Hide the closed can
         closedCan.SetActive(false);
 
-        // Make sure the open can isn't parented to the pan
+        // Detach and position the cooked can.
         openCan.transform.SetParent(null);
+        openCan.transform.SetPositionAndRotation(
+            spawnPosition,
+            spawnRotation
+        );
 
-        // Put the open can where the closed can was
-        openCan.transform.position = spawnPosition;
-        openCan.transform.rotation = spawnRotation;
-
-        // Activate the open can
         openCan.SetActive(true);
 
-        // Optional sound
+        // Advance the day cycle on successful cooking completion.
+        if (DayCycleManager.Instance != null)
+        {
+            DayCycleManager.Instance.CompleteFoodObjective();
+        }
+
         if (popSound != null)
         {
             popSound.Play();
         }
 
-        // Optional VFX
         if (popVFX != null)
         {
             popVFX.Play();
         }
 
-        // Get the open can's Rigidbody
         Rigidbody rb = openCan.GetComponent<Rigidbody>();
 
         if (rb != null)
@@ -147,15 +155,13 @@ public class PanCooking : MonoBehaviour
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
 
-            // Pop out of the pan
             Vector3 popDirection = transform.up;
 
-            // Add a little random sideways movement
             popDirection += transform.right *
-                            Random.Range(-randomSideForce, randomSideForce);
+                Random.Range(-randomSideForce, randomSideForce);
 
             popDirection += transform.forward *
-                            Random.Range(-randomSideForce, randomSideForce);
+                Random.Range(-randomSideForce, randomSideForce);
 
             popDirection.Normalize();
 
@@ -164,7 +170,6 @@ public class PanCooking : MonoBehaviour
                 ForceMode.Impulse
             );
 
-            // Add some rotation
             rb.AddTorque(
                 Random.insideUnitSphere * popTorque,
                 ForceMode.Impulse

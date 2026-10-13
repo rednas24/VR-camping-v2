@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 public class FireIgnitionZone : MonoBehaviour
@@ -16,10 +17,14 @@ public class FireIgnitionZone : MonoBehaviour
 
     private void Start()
     {
-        // Make sure the cooking zone starts disabled
         if (cookingZone != null)
         {
             cookingZone.SetActive(false);
+        }
+
+        if (fireParticles != null)
+        {
+            fireParticles.SetActive(false);
         }
     }
 
@@ -34,8 +39,8 @@ public class FireIgnitionZone : MonoBehaviour
             return;
         }
 
-        // Don't allow ignition until all wood is placed
-        if (!woodManager.IsComplete)
+        // Wait until all required wood has been placed.
+        if (woodManager == null || !woodManager.IsComplete)
         {
             timer = 0f;
             return;
@@ -68,14 +73,25 @@ public class FireIgnitionZone : MonoBehaviour
 
     private void IgniteFire()
     {
+        if (fireLit)
+            return;
+
         fireLit = true;
 
-        fireParticles.SetActive(true);
+        if (fireParticles != null)
+        {
+            fireParticles.SetActive(true);
+        }
 
-        // Enable cooking zone
         if (cookingZone != null)
         {
             cookingZone.SetActive(true);
+        }
+
+        // Advance the day cycle only when ignition succeeds.
+        if (DayCycleManager.Instance != null)
+        {
+            DayCycleManager.Instance.CompleteFireObjective();
         }
 
         Debug.Log("Bonfire ignited!");
