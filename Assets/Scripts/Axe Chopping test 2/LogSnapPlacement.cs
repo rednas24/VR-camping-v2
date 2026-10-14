@@ -16,6 +16,15 @@ public class LogSnapPlacement : MonoBehaviour
 
     private bool placementTriggered = false;
 
+    // Which log currently occupies each snap target.
+    // Shared between all LogSnapPlacement instances, so only one log
+    // can be placed on a given SnapInteractable at a time.
+    private static readonly Dictionary<SnapInteractable, LogSnapPlacement> Occupants =
+        new Dictionary<SnapInteractable, LogSnapPlacement>();
+
+    // The snap target this log has claimed (null if it hasn't placed yet).
+    private SnapInteractable _claimedTarget;
+
     // All grab interactables on this log, cached so we can lock/unlock them.
     private readonly List<MonoBehaviour> _grabInteractables = new List<MonoBehaviour>();
 
@@ -41,6 +50,12 @@ public class LogSnapPlacement : MonoBehaviour
         CacheGrabInteractables();
     }
 
+    private void OnDestroy()
+    {
+        // Free the slot if this log is destroyed (e.g. after being chopped).
+        ReleaseTarget();
+    }
+
     private void CacheGrabInteractables()
     {
         _grabInteractables.Clear();
@@ -64,8 +79,8 @@ public class LogSnapPlacement : MonoBehaviour
     }
 
     /// <summary>
-    /// Makes the log grabbable again and re-arms snap detection.
-    /// Only needed if the same object is reused after splitting.
+    /// Makes the log grabbable again, frees the snap slot and re-arms
+    /// snap detection. Only needed if the same object is reused after splitting.
     /// </summary>
     public void UnlockLog()
     {
@@ -75,7 +90,41 @@ public class LogSnapPlacement : MonoBehaviour
                 grab.enabled = true;
         }
 
+        ReleaseTarget();
         placementTriggered = false;
+    }
+
+    /// <summary>
+    /// Call this when the log leaves the snap spot (chopped, removed, etc.)
+    /// so another log can be placed there.
+    /// </summary>
+    public void ReleaseTarget()
+    {
+        if (_claimedTarget == null)
+            return;
+
+        if (Occupants.TryGetValue(_claimedTarget, out LogSnapPlacement occupant) &&
+            occupant == this)
+        {
+            Occupants.Remove(_claimedTarget);
+        }
+
+        _claimedTarget = null;
+    }
+
+    private bool IsTargetOccupiedByAnotherLog(SnapInteractable target)
+    {
+        if (!Occupants.TryGetValue(target, out LogSnapPlacement occupant))
+            return false;
+
+        // Occupant was destroyed without cleaning up, treat the slot as free.
+        if (occupant == null)
+        {
+            Occupants.Remove(target);
+            return false;
+        }
+
+        return occupant != this;
     }
 
     private void Update()
@@ -103,6 +152,10 @@ public class LogSnapPlacement : MonoBehaviour
         if (snapTarget == null)
             return;
 
+        // Another log is already placed here, so this one can't complete.
+        if (IsTargetOccupiedByAnotherLog(snapTarget))
+            return;
+
         if (!snapTarget.PoseForInteractor(
                 snapInteractor,
                 out Pose targetPose))
@@ -125,6 +178,10 @@ public class LogSnapPlacement : MonoBehaviour
             rotationDifference <= rotationTolerance)
         {
             placementTriggered = true;
+
+            // Claim the snap target so no other log can be placed on it.
+            _claimedTarget = snapTarget;
+            Occupants[snapTarget] = this;
 
             // Calculate where the LOG ROOT needs to be
             // so that the SnapPose ends up exactly on target.

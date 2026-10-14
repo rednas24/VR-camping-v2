@@ -1,13 +1,31 @@
-
 using UnityEngine;
 
 public class DayCycleManager : MonoBehaviour
 {
     public static DayCycleManager Instance { get; private set; }
 
-    [Header("Lighting")]
+    [Header("Timing")]
+    [Tooltip("Seconds it takes to move from one time of day to the next.")]
+    [SerializeField, Min(0.1f)] private float transitionDuration = 12f;
+
+    [Tooltip("Shape of each individual change (0 = start of change, 1 = end). " +
+             "EaseInOut gives a slow start and a gentle landing.")]
+    [SerializeField] private AnimationCurve transitionEase =
+        AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Header("Sun")]
     [SerializeField] private Light sun;
-    [SerializeField, Min(0.01f)] private float transitionSpeed = 2f;
+
+    [Tooltip("Sun pitch offset (degrees) applied at the start and end of the full cycle.")]
+    [SerializeField] private float startAngle = 0f;
+    [SerializeField] private float endAngle = 180f;
+
+    [Tooltip("Sun intensity multiplier over the whole day (0 = morning, 1 = night).")]
+    [SerializeField] private AnimationCurve sunIntensityCurve = CreateDefaultIntensityCurve();
+
+    [Header("Ambient Light")]
+    [Tooltip("Ambient colour over the whole day (left = morning, right = night).")]
+    [SerializeField] private Gradient ambientGradient = CreateDefaultAmbientGradient();
 
     [Header("Wood Objective")]
     [SerializeField, Min(1)] private int requiredWoodPieces = 3;
@@ -74,18 +92,25 @@ public class DayCycleManager : MonoBehaviour
     {
         UpdateTargetProgress();
         currentProgress = targetProgress;
-        ApplyLighting(currentProgress);
+        ApplyLighting(GetDisplayProgress(currentProgress));
     }
 
     private void Update()
     {
+        if (Mathf.Approximately(currentProgress, targetProgress))
+            return;
+
+        // Each objective is worth 1/3 of the cycle, and every step takes
+        // exactly transitionDuration seconds regardless of distance.
+        float speed = (1f / 3f) / transitionDuration;
+
         currentProgress = Mathf.MoveTowards(
             currentProgress,
             targetProgress,
-            Time.deltaTime / transitionSpeed
+            speed * Time.deltaTime
         );
 
-        ApplyLighting(currentProgress);
+        ApplyLighting(GetDisplayProgress(currentProgress));
     }
 
     public void RegisterWoodChoppedPiece()
@@ -140,68 +165,33 @@ public class DayCycleManager : MonoBehaviour
         targetProgress = CompletedObjectives / 3f;
     }
 
+    // Applies the ease curve within each third of the day, so every change
+    // starts gently and settles softly into the next time of day.
+    private float GetDisplayProgress(float linearProgress)
+    {
+        float scaled = linearProgress * 3f;
+        float segment = Mathf.Floor(scaled);
+        float t = scaled - segment;
+
+        return (segment + transitionEase.Evaluate(t)) / 3f;
+    }
+
     private void ApplyLighting(float progress)
     {
-        if (sun == null)
-            return;
+        progress = Mathf.Clamp01(progress);
 
-        // Rotate the directional light gradually through the day.
-        float angle = Mathf.Lerp(0f, 180f, progress);
-
-        sun.transform.rotation =
-            initialSunRotation * Quaternion.Euler(angle, 0f, 0f);
-
-        // Fade the sun out towards night.
-        float intensityMultiplier;
-
-        if (progress < 1f / 3f)
+        if (sun != null)
         {
-            intensityMultiplier = Mathf.Lerp(
-                0.8f, 1f, progress * 3f
-            );
-        }
-        else if (progress < 2f / 3f)
-        {
-            intensityMultiplier = Mathf.Lerp(
-                1f, 0.4f, (progress - 1f / 3f) * 3f
-            );
-        }
-        else
-        {
-            intensityMultiplier = Mathf.Lerp(
-                0.4f, 0f, (progress - 2f / 3f) * 3f
-            );
+            float angle = Mathf.Lerp(startAngle, endAngle, progress);
+
+            sun.transform.rotation =
+                initialSunRotation * Quaternion.Euler(angle, 0f, 0f);
+
+            sun.intensity =
+                initialSunIntensity * sunIntensityCurve.Evaluate(progress);
         }
 
-        sun.intensity = initialSunIntensity * intensityMultiplier;
-
-        Color morning = new Color(0.55f, 0.50f, 0.45f);
-        Color midday = new Color(0.80f, 0.80f, 0.80f);
-        Color evening = new Color(0.45f, 0.28f, 0.22f);
-        Color night = new Color(0.025f, 0.035f, 0.09f);
-
-        Color ambient;
-
-        if (progress < 1f / 3f)
-        {
-            ambient = Color.Lerp(
-                morning, midday, progress * 3f
-            );
-        }
-        else if (progress < 2f / 3f)
-        {
-            ambient = Color.Lerp(
-                midday, evening, (progress - 1f / 3f) * 3f
-            );
-        }
-        else
-        {
-            ambient = Color.Lerp(
-                evening, night, (progress - 2f / 3f) * 3f
-            );
-        }
-
-        RenderSettings.ambientLight = ambient;
+        RenderSettings.ambientLight = ambientGradient.Evaluate(progress);
     }
 
     private void OnDestroy()
@@ -210,5 +200,44 @@ public class DayCycleManager : MonoBehaviour
         {
             Instance = null;
         }
+    }
+
+    // ---- Default values (editable in the Inspector afterwards) ----
+
+    private static AnimationCurve CreateDefaultIntensityCurve()
+    {
+        var curve = new AnimationCurve(
+            new Keyframe(0f, 0.8f),          // morning
+            new Keyframe(1f / 3f, 1f),       // midday
+            new Keyframe(2f / 3f, 0.4f),     // evening
+            new Keyframe(1f, 0f)             // night
+        );
+
+        for (int i = 0; i < curve.length; i++)
+            curve.SmoothTangents(i, 0f);
+
+        return curve;
+    }
+
+    private static Gradient CreateDefaultAmbientGradient()
+    {
+        var gradient = new Gradient();
+
+        gradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(new Color(0.55f, 0.50f, 0.45f), 0f),        // morning
+                new GradientColorKey(new Color(0.80f, 0.80f, 0.80f), 1f / 3f),   // midday
+                new GradientColorKey(new Color(0.45f, 0.28f, 0.22f), 2f / 3f),   // evening
+                new GradientColorKey(new Color(0.025f, 0.035f, 0.09f), 1f)       // night
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(1f, 1f)
+            }
+        );
+
+        return gradient;
     }
 }
