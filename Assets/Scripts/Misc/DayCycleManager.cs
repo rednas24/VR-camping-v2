@@ -27,6 +27,14 @@ public class DayCycleManager : MonoBehaviour
     [Tooltip("Ambient colour over the whole day (left = morning, right = night).")]
     [SerializeField] private Gradient ambientGradient = CreateDefaultAmbientGradient();
 
+    [Header("Morning Fog")]
+    [Tooltip("Optional. If left empty, the GroundFog in the scene is used.")]
+    [SerializeField] private GroundFog groundFog;
+
+    [Tooltip("Fog amount over the whole day (0 = morning, 1 = night). " +
+             "By default it is thick at dawn and burns off before midday.")]
+    [SerializeField] private AnimationCurve fogAmountCurve = CreateDefaultFogCurve();
+
     [Header("Wood Objective")]
     [SerializeField, Min(1)] private int requiredWoodPieces = 3;
 
@@ -86,6 +94,9 @@ public class DayCycleManager : MonoBehaviour
             initialSunIntensity = sun.intensity;
             initialSunRotation = sun.transform.rotation;
         }
+
+        if (groundFog == null)
+            groundFog = FindAnyObjectByType<GroundFog>();
     }
 
     private void Start()
@@ -192,6 +203,9 @@ public class DayCycleManager : MonoBehaviour
         }
 
         RenderSettings.ambientLight = ambientGradient.Evaluate(progress);
+
+        if (groundFog != null)
+            groundFog.SetAmount(fogAmountCurve.Evaluate(progress));
     }
 
     private void OnDestroy()
@@ -217,6 +231,15 @@ public class DayCycleManager : MonoBehaviour
             curve.SmoothTangents(i, 0f);
 
         return curve;
+    }
+
+    private static AnimationCurve CreateDefaultFogCurve()
+    {
+        return new AnimationCurve(
+            new Keyframe(0f, 1f, 0f, 0f),       // morning
+            new Keyframe(0.25f, 0f, 0f, 0f),    // burned off on the way to midday
+            new Keyframe(1f, 0f, 0f, 0f)        // night
+        );
     }
 
     private static Gradient CreateDefaultAmbientGradient()
