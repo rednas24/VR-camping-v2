@@ -9,6 +9,9 @@ public class BonfireWoodManager : MonoBehaviour
 
     private int currentSlot = 0;
 
+    // Wood that has already been counted, so the same piece never counts twice.
+    private readonly HashSet<GameObject> countedWood = new HashSet<GameObject>();
+
     public bool IsComplete { get; private set; }
 
     private void Start()
@@ -30,8 +33,20 @@ public class BonfireWoodManager : MonoBehaviour
         if (currentSlot >= woodSlots.Length)
             return;
 
+        if (placedWood != null && !countedWood.Add(placedWood))
+            return;
+
         // Lock the log that was actually placed so it can't be grabbed again
         LockWood(placedWood);
+
+        if (SoundManager.Instance != null)
+        {
+            Vector3 soundPosition = placedWood != null
+                ? placedWood.transform.position
+                : woodSlots[currentSlot].transform.position;
+
+            SoundManager.Instance.PlayFirewoodPlaced(soundPosition);
+        }
 
         // Move to the next slot
         currentSlot++;
@@ -48,17 +63,34 @@ public class BonfireWoodManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Old signature kept so existing calls still compile, but it can't know
-    /// which log was placed, so nothing gets locked. Use WoodPlaced(gameObject).
+    /// Called by each slot's InteractableUnityEventWrapper (When Select). That
+    /// event can't pass the wood along, so the newly snapped piece is looked up
+    /// from what the slots are holding.
     /// </summary>
     public void WoodPlaced()
     {
-        Debug.LogWarning(
-            "BonfireWoodManager.WoodPlaced() was called without the placed log. " +
-            "The log will stay grabbable. Call WoodPlaced(gameObject) instead."
-        );
+        foreach (GameObject slot in woodSlots)
+        {
+            if (slot == null || !slot.TryGetComponent(out SnapInteractable snapSlot))
+                continue;
 
-        WoodPlaced(null);
+            foreach (SnapInteractor interactor in snapSlot.SelectingInteractors)
+            {
+                Rigidbody body = interactor.Rigidbody != null
+                    ? interactor.Rigidbody
+                    : interactor.GetComponentInParent<Rigidbody>();
+
+                GameObject wood = body != null ? body.gameObject : interactor.gameObject;
+
+                if (!countedWood.Contains(wood))
+                {
+                    WoodPlaced(wood);
+                    return;
+                }
+            }
+        }
+
+        Debug.LogWarning("BonfireWoodManager.WoodPlaced() found no newly placed wood in the slots.");
     }
 
     /// <summary>

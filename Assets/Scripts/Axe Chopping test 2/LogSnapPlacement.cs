@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Oculus.Interaction;
-using Oculus.Interaction.HandGrab;
 
 public class LogSnapPlacement : MonoBehaviour
 {
@@ -14,11 +13,13 @@ public class LogSnapPlacement : MonoBehaviour
     public float positionTolerance = 0.05f;
     public float rotationTolerance = 5f;
 
-    private bool placementTriggered = false;
+    [Tooltip("Seconds a snapped log gets to settle onto the snap pose. " +
+             "After that it is placed anyway, so it can't end up locked but unchoppable.")]
+    public float maxSettleTime = 1f;
 
-    // Which log currently occupies each snap target.
-    // Shared between all LogSnapPlacement instances, so only one log
-    // can be placed on a given SnapInteractable at a time.
+    private bool placementTriggered = false;
+    private float _snapTime;
+
     private static readonly Dictionary<SnapInteractable, LogSnapPlacement> Occupants =
         new Dictionary<SnapInteractable, LogSnapPlacement>();
 
@@ -56,19 +57,22 @@ public class LogSnapPlacement : MonoBehaviour
         ReleaseTarget();
     }
 
+    // Every way to pick the log up: hand grab, distance grab, ray and so on.
     private void CacheGrabInteractables()
     {
         _grabInteractables.Clear();
-        _grabInteractables.AddRange(GetComponentsInChildren<HandGrabInteractable>(true));
-        _grabInteractables.AddRange(GetComponentsInChildren<DistanceHandGrabInteractable>(true));
-        _grabInteractables.AddRange(GetComponentsInChildren<GrabInteractable>(true));
-        _grabInteractables.AddRange(GetComponentsInChildren<DistanceGrabInteractable>(true));
+
+        foreach (IInteractable interactable in GetComponentsInChildren<IInteractable>(true))
+        {
+            if (interactable is SnapInteractable)
+                continue;
+
+            if (interactable is MonoBehaviour behaviour)
+                _grabInteractables.Add(behaviour);
+        }
     }
 
-    /// <summary>
-    /// Prevents the player from picking the log up again.
-    /// Disabling an interactable also releases any hand currently holding it.
-    /// </summary>
+ 
     public void LockLog()
     {
         foreach (MonoBehaviour grab in _grabInteractables)
@@ -78,10 +82,6 @@ public class LogSnapPlacement : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Makes the log grabbable again, frees the snap slot and re-arms
-    /// snap detection. Only needed if the same object is reused after splitting.
-    /// </summary>
     public void UnlockLog()
     {
         foreach (MonoBehaviour grab in _grabInteractables)
@@ -94,10 +94,6 @@ public class LogSnapPlacement : MonoBehaviour
         placementTriggered = false;
     }
 
-    /// <summary>
-    /// Call this when the log leaves the snap spot (chopped, removed, etc.)
-    /// so another log can be placed there.
-    /// </summary>
     public void ReleaseTarget()
     {
         if (_claimedTarget == null)
@@ -117,7 +113,6 @@ public class LogSnapPlacement : MonoBehaviour
         if (!Occupants.TryGetValue(target, out LogSnapPlacement occupant))
             return false;
 
-        // Occupant was destroyed without cleaning up, treat the slot as free.
         if (occupant == null)
         {
             Occupants.Remove(target);
@@ -156,33 +151,52 @@ public class LogSnapPlacement : MonoBehaviour
         if (IsTargetOccupiedByAnotherLog(snapTarget))
             return;
 
-        if (!snapTarget.PoseForInteractor(
-                snapInteractor,
-                out Pose targetPose))
+        if (_claimedTarget != snapTarget)
         {
-            return;
-        }
-
-        // Compare the SnapPose with the target pose
-        float positionDistance =
-            Vector3.Distance(
-                snapPose.position,
-                targetPose.position);
-
-        float rotationDifference =
-            Quaternion.Angle(
-                snapPose.rotation,
-                targetPose.rotation);
-
-        if (positionDistance <= positionTolerance &&
-            rotationDifference <= rotationTolerance)
-        {
-            placementTriggered = true;
-
-            // Claim the snap target so no other log can be placed on it.
+            ReleaseTarget();
             _claimedTarget = snapTarget;
             Occupants[snapTarget] = this;
+            _snapTime = Time.time;
 
+            LockLog();
+        }
+
+        bool hasPose = snapTarget.PoseForInteractor(
+            snapInteractor,
+            out Pose targetPose);
+
+        bool timedOut = Time.time - _snapTime >= maxSettleTime;
+
+        if (!hasPose && !timedOut)
+            return;
+
+        // Compare the SnapPose with the target pose
+        bool settled = false;
+
+        if (hasPose)
+        {
+            float positionDistance =
+                Vector3.Distance(
+                    snapPose.position,
+                    targetPose.position);
+
+            float rotationDifference =
+                Quaternion.Angle(
+                    snapPose.rotation,
+                    targetPose.rotation);
+
+            settled =
+                positionDistance <= positionTolerance &&
+                rotationDifference <= rotationTolerance;
+        }
+
+        if (!settled && !timedOut)
+            return;
+
+        placementTriggered = true;
+
+        if (hasPose)
+        {
             // Calculate where the LOG ROOT needs to be
             // so that the SnapPose ends up exactly on target.
             Vector3 localSnapPosition =
@@ -206,14 +220,11 @@ public class LogSnapPlacement : MonoBehaviour
                 targetRootPosition,
                 targetRootRotation
             );
-
-            // Tell WoodLog that the log has been placed
-            woodLog.PlaceLog();
-
-            // Lock every grab interactable so the player can't pick it up again
-            LockLog();
-
-            Debug.Log("SNAP COMPLETE - LOG IS NOW LOCKED!");
         }
+
+        // Tell WoodLog that the log has been placed
+        woodLog.PlaceLog();
+
+        Debug.Log("SNAP COMPLETE - LOG IS NOW LOCKED!");
     }
 }

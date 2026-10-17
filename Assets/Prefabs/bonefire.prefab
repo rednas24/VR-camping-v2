@@ -82,6 +82,7 @@ GameObject:
   - component: {fileID: 671901249994085698}
   - component: {fileID: 1938284557339370625}
   - component: {fileID: 36435656266613918}
+  - component: {fileID: 5300908961255042894}
   m_Layer: 0
   m_Name: Wood snap log 2
   m_TagString: Untagged
@@ -117,7 +118,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06bd28341d3e86a4c8ab52b1a0269c7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Oculus.Interaction::Oculus.Interaction.SnapInteractable
-  _interactorFilters: []
+  _interactorFilters:
+  - {fileID: 5300908961255042894}
   _maxInteractors: 1
   _maxSelectingInteractors: 1
   _data: {fileID: 0}
@@ -222,6 +224,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   highlight: {fileID: 7457913608415577643}
+--- !u!114 &5300908961255042894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2571713733893025759}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e40ea1375ee4c1f80860260c85e1452, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ::WoodSnapFilter
+  accepts: 1
 --- !u!1 &2578592905117882413
 GameObject:
   m_ObjectHideFlags: 0
@@ -231,6 +246,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6230245233147834695}
+  - component: {fileID: 5937261048851726401}
   m_Layer: 0
   m_Name: Fire
   m_TagString: Untagged
@@ -254,6 +270,61 @@ Transform:
   - {fileID: 1815910088804542476}
   m_Father: {fileID: 1846135088874436829}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5937261048851726401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2578592905117882413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02037430275f4bd09e73f8f9ec282139, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ::CampfireLight
+  fireLight: {fileID: 0}
+  baseIntensity: 3
+  range: 8
+  flickerAmount: 0.35
+  flickerSpeed: 6
+  dimColor: {r: 1, g: 0.38, b: 0.1, a: 1}
+  brightColor: {r: 1, g: 0.62, b: 0.28, a: 1}
+  heightOffset: 0.35
+  wobbleDistance: 0.04
+  fadeInDuration: 2.5
+  fadeInCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.3
+      value: 1.15
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &2648853556168328346
 GameObject:
   m_ObjectHideFlags: 0
@@ -298,6 +369,7 @@ GameObject:
   - component: {fileID: 1118772603005027951}
   - component: {fileID: 2294413959888630832}
   - component: {fileID: 3173273635324149471}
+  - component: {fileID: 4699860504111028442}
   m_Layer: 0
   m_Name: Wood snap log 1
   m_TagString: Untagged
@@ -333,7 +405,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06bd28341d3e86a4c8ab52b1a0269c7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Oculus.Interaction::Oculus.Interaction.SnapInteractable
-  _interactorFilters: []
+  _interactorFilters:
+  - {fileID: 4699860504111028442}
   _maxInteractors: 1
   _maxSelectingInteractors: 1
   _data: {fileID: 0}
@@ -438,6 +511,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   highlight: {fileID: 2648853556168328346}
+--- !u!114 &4699860504111028442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3691664206603861106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e40ea1375ee4c1f80860260c85e1452, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ::WoodSnapFilter
+  accepts: 1
 --- !u!1 &4485498054713975903
 GameObject:
   m_ObjectHideFlags: 0

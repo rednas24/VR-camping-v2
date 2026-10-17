@@ -355,6 +355,7 @@ GameObject:
   - component: {fileID: 6668489398605248705}
   - component: {fileID: 5086013035641045004}
   - component: {fileID: 5571496915596643078}
+  - component: {fileID: 4036881767992324646}
   m_Layer: 0
   m_Name: Firewood quarter (1)
   m_TagString: FirewoodPiece
@@ -362,6 +363,18 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &4036881767992324646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4746181387790843063}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afa7943dc9404222b2f844dbfeef16e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::FirewoodPiece'
 --- !u!4 &5374485953830692365
 Transform:
   m_ObjectHideFlags: 0
@@ -805,6 +818,7 @@ GameObject:
   - component: {fileID: 5754557950337880884}
   - component: {fileID: 1774327957593771876}
   - component: {fileID: 4369946853179527585}
+  - component: {fileID: 3393197663840507732}
   m_Layer: 0
   m_Name: Firewood quarter
   m_TagString: FirewoodPiece
@@ -812,6 +826,18 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &3393197663840507732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6554759432208055713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afa7943dc9404222b2f844dbfeef16e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::FirewoodPiece'
 --- !u!4 &5889862053758674715
 Transform:
   m_ObjectHideFlags: 0

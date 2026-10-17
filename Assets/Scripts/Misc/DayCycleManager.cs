@@ -20,12 +20,19 @@ public class DayCycleManager : MonoBehaviour
     [SerializeField] private float startAngle = 0f;
     [SerializeField] private float endAngle = 180f;
 
-    [Tooltip("Sun intensity multiplier over the whole day (0 = morning, 1 = night).")]
+    [Tooltip("Sun intensity multiplier over the whole day (0 = morning, 1 = night). " +
+             "1 keeps the intensity set on the light, so the morning looks like the editor.")]
     [SerializeField] private AnimationCurve sunIntensityCurve = CreateDefaultIntensityCurve();
 
     [Header("Ambient Light")]
-    [Tooltip("Ambient colour over the whole day (left = morning, right = night).")]
+    [Tooltip("Ambient colour from above (sky) over the whole day (left = morning, right = night).")]
     [SerializeField] private Gradient ambientGradient = CreateDefaultAmbientGradient();
+
+    [Tooltip("Ambient colour from the sides (horizon) over the whole day.")]
+    [SerializeField] private Gradient ambientEquatorGradient = CreateDefaultEquatorGradient();
+
+    [Tooltip("Ambient colour from below (ground bounce) over the whole day.")]
+    [SerializeField] private Gradient ambientGroundGradient = CreateDefaultGroundGradient();
 
     [Header("Morning Fog")]
     [Tooltip("Optional. If left empty, the GroundFog in the scene is used.")]
@@ -97,6 +104,9 @@ public class DayCycleManager : MonoBehaviour
 
         if (groundFog == null)
             groundFog = FindAnyObjectByType<GroundFog>();
+
+        // The sky/equator/ground colours are only used in Gradient mode.
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
     }
 
     private void Start()
@@ -202,7 +212,9 @@ public class DayCycleManager : MonoBehaviour
                 initialSunIntensity * sunIntensityCurve.Evaluate(progress);
         }
 
-        RenderSettings.ambientLight = ambientGradient.Evaluate(progress);
+        RenderSettings.ambientSkyColor = ambientGradient.Evaluate(progress);
+        RenderSettings.ambientEquatorColor = ambientEquatorGradient.Evaluate(progress);
+        RenderSettings.ambientGroundColor = ambientGroundGradient.Evaluate(progress);
 
         if (groundFog != null)
             groundFog.SetAmount(fogAmountCurve.Evaluate(progress));
@@ -221,9 +233,9 @@ public class DayCycleManager : MonoBehaviour
     private static AnimationCurve CreateDefaultIntensityCurve()
     {
         var curve = new AnimationCurve(
-            new Keyframe(0f, 0.8f),          // morning
-            new Keyframe(1f / 3f, 1f),       // midday
-            new Keyframe(2f / 3f, 0.4f),     // evening
+            new Keyframe(0f, 1f),            // morning
+            new Keyframe(1f / 3f, 1.15f),    // midday
+            new Keyframe(2f / 3f, 0.6f),     // evening
             new Keyframe(1f, 0f)             // night
         );
 
@@ -249,10 +261,54 @@ public class DayCycleManager : MonoBehaviour
         gradient.SetKeys(
             new[]
             {
-                new GradientColorKey(new Color(0.55f, 0.50f, 0.45f), 0f),        // morning
-                new GradientColorKey(new Color(0.80f, 0.80f, 0.80f), 1f / 3f),   // midday
-                new GradientColorKey(new Color(0.45f, 0.28f, 0.22f), 2f / 3f),   // evening
+                new GradientColorKey(new Color(0.26f, 0.26f, 0.28f), 0f),        // morning
+                new GradientColorKey(new Color(0.34f, 0.37f, 0.42f), 1f / 3f),   // midday
+                new GradientColorKey(new Color(0.26f, 0.18f, 0.15f), 2f / 3f),   // evening
                 new GradientColorKey(new Color(0.025f, 0.035f, 0.09f), 1f)       // night
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(1f, 1f)
+            }
+        );
+
+        return gradient;
+    }
+
+    private static Gradient CreateDefaultEquatorGradient()
+    {
+        var gradient = new Gradient();
+
+        gradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(new Color(0.17f, 0.16f, 0.15f), 0f),        // morning
+                new GradientColorKey(new Color(0.22f, 0.23f, 0.23f), 1f / 3f),   // midday
+                new GradientColorKey(new Color(0.20f, 0.13f, 0.09f), 2f / 3f),   // evening
+                new GradientColorKey(new Color(0.02f, 0.025f, 0.06f), 1f)        // night
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(1f, 1f)
+            }
+        );
+
+        return gradient;
+    }
+
+    private static Gradient CreateDefaultGroundGradient()
+    {
+        var gradient = new Gradient();
+
+        gradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(new Color(0.06f, 0.055f, 0.045f), 0f),      // morning
+                new GradientColorKey(new Color(0.09f, 0.085f, 0.07f), 1f / 3f),  // midday
+                new GradientColorKey(new Color(0.06f, 0.04f, 0.03f), 2f / 3f),   // evening
+                new GradientColorKey(new Color(0.01f, 0.012f, 0.025f), 1f)       // night
             },
             new[]
             {

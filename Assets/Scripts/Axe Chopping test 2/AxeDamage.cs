@@ -17,6 +17,7 @@ public class AxeDamage : MonoBehaviour
 
     private AxeSwing axeSwing;
     private AxeGrip axeGrip;
+    private AxeImpact axeImpact;
 
     private float lastHitTime = -999f;
 
@@ -24,6 +25,7 @@ public class AxeDamage : MonoBehaviour
     {
         axeSwing = GetComponentInParent<AxeSwing>();
         axeGrip = GetComponentInParent<AxeGrip>();
+        axeImpact = GetComponentInParent<AxeImpact>();
 
         if (axeSwing == null)
             Debug.LogError("AxeDamage could not find AxeSwing!");
@@ -46,6 +48,10 @@ public class AxeDamage : MonoBehaviour
         if (!log.isPlaced)
             return;
 
+        // Only a held axe chops, and not while it is already stuck in the wood.
+        if (axeImpact != null && (!axeImpact.IsHeld || axeImpact.IsStuck))
+            return;
+
         Debug.Log("AxeHead hit placed log: " + other.gameObject.name);
 
         float speed = axeSwing.swingSpeed;
@@ -55,6 +61,11 @@ public class AxeDamage : MonoBehaviour
         if (speed < minimumSwingSpeed)
         {
             Debug.Log("Swing too slow to damage the log.");
+
+            // The axe just rests on the wood instead of sinking into it.
+            if (axeImpact != null)
+                axeImpact.RegisterHit(other, false);
+
             return;
         }
 
@@ -63,6 +74,22 @@ public class AxeDamage : MonoBehaviour
         float damage = CalculateDamage(speed);
 
         log.TakeDamage(damage);
+
+        // Harder swings sound louder.
+        if (SoundManager.Instance != null)
+        {
+            float loudness = Mathf.Lerp(
+                0.6f,
+                1f,
+                Mathf.InverseLerp(minimumSwingSpeed, maximumSwingSpeed, speed)
+            );
+
+            SoundManager.Instance.PlayChop(transform.position, loudness);
+        }
+
+        // The blade bites into the wood, unless this hit split the log.
+        if (axeImpact != null && !log.IsChopped)
+            axeImpact.RegisterHit(other, true);
 
         Debug.Log("AXE DEALT DAMAGE: " + damage);
     }

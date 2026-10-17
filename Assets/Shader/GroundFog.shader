@@ -1,7 +1,9 @@
 // Low-lying fog drawn as a stack of see-through layers that follow the ground
-// (the mesh and all settings come from GroundFog.cs). Kept unlit and cheap for
-// Quest: two noise samples per pixel plus one main-light shadow lookup, which
-// darkens fog in the shade of trees and gives soft light shafts.
+// (the mesh and all settings come from GroundFog.cs). The layers share one
+// height pattern, so together they form separate clumps of fog with clear
+// ground between them. Kept unlit and cheap for Quest: one noise sample per
+// vertex, two per pixel, plus one main-light shadow lookup, which darkens fog
+// in the shade of trees and gives soft light shafts.
 Shader "VR Camping/Ground Fog"
 {
     Properties
@@ -14,6 +16,9 @@ Shader "VR Camping/Ground Fog"
         _NoiseScale ("Noise Scale", Float) = 0.07
         _Wind ("Wind (XY, m/s)", Vector) = (0.24, 0.07, 0, 0)
         _LayerThickness ("Layer Thickness", Float) = 0.14
+        _FogHeight ("Fog Height", Float) = 1.1
+        _Shading ("Clump Shading", Range(0, 1)) = 0.45
+        _LayerWave ("Layer Wave", Float) = 0.08
         _SunScattering ("Sun Scattering", Range(0, 2)) = 0.6
         _ShadowStrength ("Shadow Strength", Range(0, 1)) = 0.35
         [NoScaleOffset] _NoiseTex ("Noise", 2D) = "gray" {}
@@ -40,7 +45,8 @@ Shader "VR Camping/Ground Fog"
             Cull Off
 
             HLSLPROGRAM
-            #pragma target 2.0
+            // 3.0 for the noise lookup in the vertex shader.
+            #pragma target 3.0
             #pragma vertex Vert
             #pragma fragment Frag
 
@@ -62,6 +68,9 @@ Shader "VR Camping/Ground Fog"
                 float _NoiseScale;
                 float4 _Wind;
                 half _LayerThickness;
+                half _FogHeight;
+                half _Shading;
+                half _LayerWave;
                 half _SunScattering;
                 half _ShadowStrength;
             CBUFFER_END
@@ -81,6 +90,7 @@ Shader "VR Camping/Ground Fog"
                 float3 viewWS : TEXCOORD1; // camera to fragment, not normalised
                 half3 normalWS : TEXCOORD2;
                 half2 layerAndFade : TEXCOORD3;
+                half heightFraction : TEXCOORD4; // 0 = ground, 1 = top of the fog, after bending
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -90,11 +100,24 @@ Shader "VR Camping/Ground Fog"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
-                output.positionCS = TransformWorldToHClip(output.positionWS);
-                output.viewWS = output.positionWS - GetCameraPositionWS();
+                half layer = input.layerAndFade.x;
+                float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
+
+                // Bend the layers up and down, more towards the top, so the stack
+                // doesn't show as flat slices when you look across it. Neighbouring
+                // layers bend almost the same way, so they don't cut through each other.
+                float2 drift = _Wind.xy * _Time.y;
+                half wave = SAMPLE_TEXTURE2D_LOD(_NoiseTex, sampler_NoiseTex,
+                    (positionWS.xz - drift) * (_NoiseScale * 0.8) + layer * float2(0.37, 0.23), 1).r;
+                float bend = (wave - 0.5) * 2.0 * _LayerWave * layer;
+                positionWS.y += bend;
+
+                output.positionWS = positionWS;
+                output.positionCS = TransformWorldToHClip(positionWS);
+                output.viewWS = positionWS - GetCameraPositionWS();
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.layerAndFade = input.layerAndFade;
+                output.heightFraction = layer + bend / max(_FogHeight, 0.01);
                 return output;
             }
 
@@ -106,23 +129,34 @@ Shader "VR Camping/Ground Fog"
                 float viewDistance = length(input.viewWS);
                 float3 viewDir = input.viewWS / max(viewDistance, 1e-4);
 
-                // Two drifting noise samples, the second warped by the first so the
-                // fog swirls instead of sliding. Higher layers drift a little faster,
-                // which gives the stack some depth when you move your head.
-                float2 drift = _Wind.xy * (_Time.y * (1.0 + layer * 0.5));
+                // Every layer reads the same large noise, so the layers line up into
+                // clumps instead of being separate patchy sheets. The detail noise is
+                // warped by the large one and differs per layer, which roughens the
+                // clump tops so they billow instead of looking like smooth domes.
+                float2 drift = _Wind.xy * _Time.y;
                 float2 positionXZ = input.positionWS.xz;
                 half large = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex,
-                    (positionXZ - drift) * _NoiseScale + layer * float2(0.31, 0.17)).r;
+                    (positionXZ - drift) * _NoiseScale).r;
                 half detail = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex,
                     (positionXZ - drift * 1.6 - float2(-drift.y, drift.x) * 0.5) * (_NoiseScale * 2.7)
                     + (large - 0.5) * 0.6 + layer * float2(0.13, 0.41)).r;
-                half pattern = large * 0.6 + detail * 0.4;
 
-                // The bottom of the fog is an almost solid blanket and the upper layers
-                // break up into wisps. As the fog burns off (_Amount -> 0) it also gets
-                // patchier, so it clears like real fog instead of just turning transparent.
-                half threshold = 1.0 - _Coverage * (0.35 + 0.65 * _Amount) + layer * _Wispiness;
-                half fog = smoothstep(threshold - 0.15, threshold + 0.15, pattern);
+                // How tall the clump is here, as a fraction of the fog height: highest
+                // in the middle of a patch and down to nothing at its edge, leaving clear
+                // ground between clumps. As the fog burns off (_Amount -> 0) the clumps
+                // shrink and sink, so it clears like real fog instead of just fading.
+                half threshold = 1.0 - _Coverage * (0.35 + 0.65 * _Amount);
+                half shape = saturate((large - threshold) / max(1.0 - threshold, 0.05));
+                half top = sqrt(shape) + (detail - 0.5) * _Wispiness * saturate(shape * 4.0);
+
+                half heightFraction = input.heightFraction;
+                half inside = smoothstep(heightFraction - 0.12, heightFraction + 0.12, top);
+                // Denser in the middle of a clump, and fully gone outside it (the soft
+                // top edge alone would leave a thin film on the bottom layer).
+                half fog = inside * (0.5 + shape) * saturate(shape * 6.0);
+
+                // 0 at the bottom of the clump, 1 at its top.
+                half withinClump = saturate(heightFraction / max(top, 0.1));
 
                 // Each layer stands in for a slab of fog. Looking across it at a shallow
                 // angle is a longer path than looking straight down, so fog in the
@@ -141,9 +175,16 @@ Shader "VR Camping/Ground Fog"
                 half towardSun = saturate(dot(viewDir, sun.direction));
                 towardSun *= towardSun;
                 towardSun *= towardSun;
-                half glow = towardSun * towardSun * _SunScattering;
+                half glow = towardSun * towardSun * _SunScattering * (0.5 + 0.5 * withinClump);
 
-                half3 color = _FogColor.rgb * lerp(1.0 - _ShadowStrength, 1.0, sun.shadowAttenuation)
+                // Fake light inside the fog: the bottom of each clump sits in its own
+                // cool shade and the top catches the sky, which makes the clumps read
+                // as solid shapes.
+                half3 clumpShade = lerp(half3(0.92, 0.96, 1.04) * (1.0 - _Shading),
+                                        half3(1, 1, 1) * (1.0 + _Shading * 0.25), withinClump);
+
+                half3 color = _FogColor.rgb * clumpShade
+                            * lerp(1.0 - _ShadowStrength, 1.0, sun.shadowAttenuation)
                             + sun.color * (glow * sunVisibility);
 
                 return half4(color, alpha);

@@ -2,10 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// Low-lying fog built from stacked, see-through layers that follow the ground.
-// The ground is found with raycasts when the fog is built, so the fog hugs the
-// hills instead of cutting through them. The look is set here; DayCycleManager
-// only decides how much fog there is through SetAmount.
 [ExecuteAlways]
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class GroundFog : MonoBehaviour
@@ -51,14 +47,23 @@ public class GroundFog : MonoBehaviour
              "than fog you look straight down into.")]
     [SerializeField, Range(0f, 3f)] private float density = 0.35f;
 
-    [Tooltip("How much of the ground the fog covers (lower = patchier).")]
+    [Tooltip("How much of the ground has fog clumps on it (lower = more clear " +
+             "ground between them). Higher also makes the clumps taller.")]
     [SerializeField, Range(0f, 1f)] private float coverage = 0.75f;
 
-    [Tooltip("How much the upper layers break up into wisps.")]
+    [Tooltip("How lumpy the tops of the clumps are.")]
     [SerializeField, Range(0f, 1.5f)] private float wispiness = 0.55f;
 
-    [Tooltip("Rough size (metres) of the fog patches.")]
+    [Tooltip("Scale (metres) of the fog pattern. Bigger gives fewer, larger clumps.")]
     [SerializeField, Min(0.5f)] private float patchSize = 14f;
+
+    [Tooltip("How much darker and bluer the bottom of each clump is than its top. " +
+             "This is what makes the clumps look solid instead of flat.")]
+    [SerializeField, Range(0f, 1f)] private float clumpShading = 0.45f;
+
+    [Tooltip("How far (metres) the layers bend up and down, so the fog doesn't " +
+             "look like stacked flat sheets when you look across it.")]
+    [SerializeField, Range(0f, 0.3f)] private float layerWave = 0.08f;
 
     [SerializeField] private Vector2 windDirection = new Vector2(1f, 0.3f);
     [SerializeField, Min(0f)] private float windSpeed = 0.25f;
@@ -84,6 +89,9 @@ public class GroundFog : MonoBehaviour
     private static readonly int NoiseScaleId = Shader.PropertyToID("_NoiseScale");
     private static readonly int WindId = Shader.PropertyToID("_Wind");
     private static readonly int LayerThicknessId = Shader.PropertyToID("_LayerThickness");
+    private static readonly int FogHeightId = Shader.PropertyToID("_FogHeight");
+    private static readonly int ShadingId = Shader.PropertyToID("_Shading");
+    private static readonly int LayerWaveId = Shader.PropertyToID("_LayerWave");
     private static readonly int SunScatteringId = Shader.PropertyToID("_SunScattering");
     private static readonly int ShadowStrengthId = Shader.PropertyToID("_ShadowStrength");
     private static readonly int NoiseTexId = Shader.PropertyToID("_NoiseTex");
@@ -283,6 +291,12 @@ public class GroundFog : MonoBehaviour
         mesh.SetUVs(0, layerAndFade);
         mesh.SetTriangles(triangles, 0);
         mesh.RecalculateBounds();
+
+        // The shader bends the layers up and down, so leave room for the
+        // largest bend or the fog gets culled while still on screen.
+        Bounds bounds = mesh.bounds;
+        bounds.Expand(new Vector3(0f, 0.6f, 0f));
+        mesh.bounds = bounds;
 
         builtGeometryKey = GetGeometryKey();
         ApplyMaterialProperties();
@@ -489,6 +503,9 @@ public class GroundFog : MonoBehaviour
         material.SetFloat(NoiseScaleId, 1f / patchSize);
         material.SetVector(WindId, wind);
         material.SetFloat(LayerThicknessId, height / layerCount);
+        material.SetFloat(FogHeightId, height);
+        material.SetFloat(ShadingId, clumpShading);
+        material.SetFloat(LayerWaveId, layerWave);
         material.SetFloat(SunScatteringId, sunScattering);
         material.SetFloat(ShadowStrengthId, shadowStrength);
         material.SetTexture(NoiseTexId, noiseTexture);
@@ -518,7 +535,6 @@ public class GroundFog : MonoBehaviour
 
     // ---- Noise texture ----
 
-    // Tileable gradient noise with a few octaves, spread out to use the full 0-1 range.
     private static Texture2D CreateNoiseTexture()
     {
         const int size = 128;

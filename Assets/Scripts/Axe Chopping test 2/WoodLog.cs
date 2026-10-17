@@ -9,6 +9,9 @@ public class WoodLog : MonoBehaviour
     private float currentHealth;
     private bool isChopped = false;
 
+    // True once the log has split (it is destroyed at the end of the frame).
+    public bool IsChopped => isChopped;
+
     [Header("Placement")]
     public bool isPlaced = false;
 
