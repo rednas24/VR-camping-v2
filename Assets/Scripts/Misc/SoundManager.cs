@@ -16,6 +16,12 @@ public class SoundManager : MonoBehaviour
 
     [SerializeField, Range(0f, 1f)] private float firewoodVolume = 0.9f;
 
+    [SerializeField] private AudioClip fireLoopClip;
+
+    [SerializeField, Range(0f, 1f)] private float fireLoopVolume = 0.8f;
+
+    [SerializeField, Min(0f)] private float fireFadeIn = 2.5f;
+
     [Header("Chopping")]
     [SerializeField] private AudioClip[] chopClips;
 
@@ -50,6 +56,8 @@ public class SoundManager : MonoBehaviour
 
     private AudioSource ambientSource;
     private float ambientFade;
+    private AudioSource fireSource;
+    private float fireFade;
     private AudioSource[] voices;
     private int nextVoice;
 
@@ -81,20 +89,29 @@ public class SoundManager : MonoBehaviour
 
         for (int i = 0; i < voices.Length; i++)
         {
-            var voiceObject = new GameObject($"Sound Voice {i}");
-            voiceObject.transform.SetParent(transform, false);
-
-            AudioSource voice = voiceObject.AddComponent<AudioSource>();
-            voice.playOnAwake = false;
-            voice.spatialBlend = 1f;
-            voice.spatialize = spatialize;
-            voice.rolloffMode = AudioRolloffMode.Logarithmic;
-            voice.minDistance = minDistance;
-            voice.maxDistance = maxDistance;
-            voice.dopplerLevel = 0f;
-
-            voices[i] = voice;
+            voices[i] = Create3DSource($"Sound Voice {i}", spatialize);
         }
+
+        fireSource = Create3DSource("Fire Loop", spatialize);
+        fireSource.loop = true;
+        fireSource.volume = 0f;
+    }
+
+    private AudioSource Create3DSource(string sourceName, bool spatialize)
+    {
+        var sourceObject = new GameObject(sourceName);
+        sourceObject.transform.SetParent(transform, false);
+
+        AudioSource source = sourceObject.AddComponent<AudioSource>();
+        source.playOnAwake = false;
+        source.spatialBlend = 1f;
+        source.spatialize = spatialize;
+        source.rolloffMode = AudioRolloffMode.Logarithmic;
+        source.minDistance = minDistance;
+        source.maxDistance = maxDistance;
+        source.dopplerLevel = 0f;
+
+        return source;
     }
 
     private void Start()
@@ -108,15 +125,24 @@ public class SoundManager : MonoBehaviour
 
     private void Update()
     {
-        if (!ambientSource.isPlaying)
-            return;
+        if (ambientSource.isPlaying)
+        {
+            ambientFade = FadeIn(ambientFade, ambientFadeIn);
+            ambientSource.volume = ambientVolume * ambienceSetting * ambientFade;
+        }
 
-        // Fades in once; after that, setting changes are heard straight away.
-        ambientFade = ambientFadeIn > 0f
-            ? Mathf.MoveTowards(ambientFade, 1f, Time.deltaTime / ambientFadeIn)
-            : 1f;
+        // The fire is part of the ambience, so it follows the ambience setting.
+        if (fireSource.isPlaying)
+        {
+            fireFade = FadeIn(fireFade, fireFadeIn);
+            fireSource.volume = fireLoopVolume * ambienceSetting * fireFade;
+        }
+    }
 
-        ambientSource.volume = ambientVolume * ambienceSetting * ambientFade;
+    // Fades in once; after that, setting changes are heard straight away.
+    private static float FadeIn(float fade, float duration)
+    {
+        return duration > 0f ? Mathf.MoveTowards(fade, 1f, Time.deltaTime / duration) : 1f;
     }
 
     public void PlayFirewoodPlaced(Vector3 position)
@@ -124,7 +150,16 @@ public class SoundManager : MonoBehaviour
         PlayAt(PickClip(firewoodPlacedClips, ref lastFirewoodClip), position, firewoodVolume);
     }
 
-    // loudness: 0-1, e.g. how hard the swing was.
+    public void StartFireLoop(Vector3 position)
+    {
+        if (fireLoopClip == null || fireSource.isPlaying)
+            return;
+
+        fireSource.transform.position = position;
+        fireSource.clip = fireLoopClip;
+        fireSource.Play();
+    }
+
     public void PlayChop(Vector3 position, float loudness = 1f)
     {
         PlayAt(PickClip(chopClips, ref lastChopClip), position, chopVolume * Mathf.Clamp01(loudness));

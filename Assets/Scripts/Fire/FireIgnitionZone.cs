@@ -88,6 +88,15 @@ public class FireIgnitionZone : MonoBehaviour
             cookingZone.SetActive(true);
         }
 
+        if (SoundManager.Instance != null)
+        {
+            Vector3 soundPosition = fireParticles != null
+                ? fireParticles.transform.position
+                : transform.position;
+
+            SoundManager.Instance.StartFireLoop(soundPosition);
+        }
+
         // Advance the day cycle only when ignition succeeds.
         if (DayCycleManager.Instance != null)
         {
