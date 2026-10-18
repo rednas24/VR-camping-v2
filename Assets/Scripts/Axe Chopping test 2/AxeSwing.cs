@@ -39,8 +39,6 @@ public class AxeSwing : MonoBehaviour
         rb.useGravity = true;
         rb.isKinematic = false;
 
-        // Speculative is the continuous mode that also works while the axe is
-        // kinematic (held).
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
