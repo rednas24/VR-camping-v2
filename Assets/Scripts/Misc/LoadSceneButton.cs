@@ -44,7 +44,6 @@ public class LoadSceneButton : MonoBehaviour
         isLoading = true;
         button.interactable = false;
 
-        // Async so the headset keeps rendering while the camp loads.
         SceneManager.LoadSceneAsync(sceneName);
     }
 

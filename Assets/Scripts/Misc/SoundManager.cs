@@ -5,40 +5,51 @@ public class SoundManager : MonoBehaviour
     public static SoundManager Instance { get; private set; }
 
     [Header("Ambience")]
-    [Tooltip("Looping background sound, heard the same everywhere.")]
     [SerializeField] private AudioClip ambientClip;
 
     [SerializeField, Range(0f, 1f)] private float ambientVolume = 0.5f;
 
-    [Tooltip("Seconds the ambience takes to fade in at the start.")]
     [SerializeField, Min(0f)] private float ambientFadeIn = 3f;
 
     [Header("Bonfire")]
-    [Tooltip("One is picked at random each time firewood is placed on the bonfire.")]
     [SerializeField] private AudioClip[] firewoodPlacedClips;
 
     [SerializeField, Range(0f, 1f)] private float firewoodVolume = 0.9f;
 
     [Header("Chopping")]
-    [Tooltip("One is picked at random each time the axe hits a log.")]
     [SerializeField] private AudioClip[] chopClips;
 
     [SerializeField, Range(0f, 1f)] private float chopVolume = 1f;
 
     [Header("3D Sound")]
-    [Tooltip("Random pitch change per play, so repeated sounds don't sound identical.")]
     [SerializeField, Range(0f, 0.3f)] private float pitchVariation = 0.08f;
 
-    [Tooltip("Full volume within this distance (metres).")]
     [SerializeField, Min(0.1f)] private float minDistance = 1f;
 
-    [Tooltip("Distance (metres) where the sound stops getting quieter.")]
     [SerializeField, Min(1f)] private float maxDistance = 20f;
 
-    [Tooltip("How many effects can play at the same time.")]
     [SerializeField, Range(1, 16)] private int voiceCount = 6;
 
+    // Set by the settings sign, applied on top of the volumes above.
+    [Header("Player Settings")]
+    [SerializeField, Range(0f, 1f)] private float ambienceSetting = 1f;
+
+    [SerializeField, Range(0f, 1f)] private float sfxSetting = 1f;
+
+    public float AmbienceVolume
+    {
+        get => ambienceSetting;
+        set => ambienceSetting = Mathf.Clamp01(value);
+    }
+
+    public float SfxVolume
+    {
+        get => sfxSetting;
+        set => sfxSetting = Mathf.Clamp01(value);
+    }
+
     private AudioSource ambientSource;
+    private float ambientFade;
     private AudioSource[] voices;
     private int nextVoice;
 
@@ -100,13 +111,12 @@ public class SoundManager : MonoBehaviour
         if (!ambientSource.isPlaying)
             return;
 
-        float fadeSpeed = ambientFadeIn > 0f ? ambientVolume / ambientFadeIn : float.MaxValue;
+        // Fades in once; after that, setting changes are heard straight away.
+        ambientFade = ambientFadeIn > 0f
+            ? Mathf.MoveTowards(ambientFade, 1f, Time.deltaTime / ambientFadeIn)
+            : 1f;
 
-        ambientSource.volume = Mathf.MoveTowards(
-            ambientSource.volume,
-            ambientVolume,
-            fadeSpeed * Time.deltaTime
-        );
+        ambientSource.volume = ambientVolume * ambienceSetting * ambientFade;
     }
 
     public void PlayFirewoodPlaced(Vector3 position)
@@ -129,7 +139,7 @@ public class SoundManager : MonoBehaviour
 
         voice.transform.position = position;
         voice.clip = clip;
-        voice.volume = volume;
+        voice.volume = volume * sfxSetting;
         voice.pitch = 1f + Random.Range(-pitchVariation, pitchVariation);
         voice.Play();
     }
