@@ -8,10 +8,7 @@ public class MicrogestureMovement : MonoBehaviour
     [Header("Tracked Hands")]
     public OVRHand leftHand;
     public OVRHand rightHand;
-
     public bool allowLeftHand = true;
-
-    [Tooltip("Off by default so chopping with the right hand can't move you.")]
     public bool allowRightHand = false;
 
     [Header("Movement")]
@@ -19,13 +16,7 @@ public class MicrogestureMovement : MonoBehaviour
     public Transform headTransform;
     public float moveSpeed = 1.5f;
     public float backwardSpeed = 0.8f;
-
-    [Tooltip("Seconds to reach full speed and to stop again. " +
-             "Gentle starts and stops are more comfortable in VR.")]
     public float accelerationTime = 0.25f;
-
-    [Tooltip("Stops walking if no allowed hand has been tracked for this many seconds, " +
-             "so you don't keep walking after lowering your hands out of view.")]
     public float stopAfterHandsLost = 1f;
 
     [Header("Turning")]
@@ -33,26 +24,14 @@ public class MicrogestureMovement : MonoBehaviour
     public float snapTurnAngle = 45f;
 
     [Header("Gesture Detection")]
-    [Tooltip("Seconds after a gesture during which the same hand is ignored, " +
-             "so one swipe can't count twice.")]
     public float gestureCooldown = 0.3f;
-
-    [Tooltip("Turns off the camera rig's own microgesture locomotion (teleport, " +
-             "turn and step), which reacts to the same gestures.")]
     public bool disableBuiltInMicrogestureLocomotion = true;
-
     private const string BuiltInLocomotionName = "MicroGesturesLocomotionHandInteractorGroup";
-
     private HandGrabTracker grabTracker;
-
-    // Marks the turn events as coming from this script.
     private UniqueIdentifier identifier;
-
-    // -1 = backward, 0 = standing, 1 = forward.
     private int walkDirection;
     private float currentSpeed;
     private bool wasMoving;
-
     private float leftCooldownEnd;
     private float rightCooldownEnd;
     private float handsLostTime;
@@ -109,8 +88,6 @@ public class MicrogestureMovement : MonoBehaviour
             return;
 
         anyHandTracked = true;
-
-        // Also tells the runtime that microgestures are in use.
         OVRHand.MicrogestureType gesture = hand.GetMicrogestureType();
 
         if (gesture == OVRHand.MicrogestureType.NoGesture ||
@@ -156,8 +133,6 @@ public class MicrogestureMovement : MonoBehaviour
             Quaternion.Euler(0f, angle, 0f),
             LocomotionEvent.RotationType.Relative));
     }
-
-    // Runs after the locomotor's Update, so the velocity is used next frame.
     private void LateUpdate()
     {
         if (locomotor == null || headTransform == null)
@@ -179,23 +154,18 @@ public class MicrogestureMovement : MonoBehaviour
         }
         else if (wasMoving)
         {
-            // Only stop once, so other locomotion isn't overridden while standing still.
             StopHorizontalMovement();
             wasMoving = false;
         }
     }
-
-    // Negative speed moves backward.
     private void Move(float speed)
     {
-        // Use the headset's forward direction, ignoring head tilt.
         Vector3 direction = headTransform.forward;
         direction.y = 0f;
 
         if (direction.sqrMagnitude > 0.001f)
             direction.Normalize();
 
-        // Compensate for the locomotor's horizontal velocity damping.
         float damping = locomotor.IsGrounded
             ? locomotor.GroundDamping
             : locomotor.AirDamping;

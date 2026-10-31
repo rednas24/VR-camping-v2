@@ -82,7 +82,6 @@ public class SoundManager : MonoBehaviour
         ambientSource.priority = 0;
         ambientSource.volume = 0f;
 
-        // Uses the project's spatializer (Meta XR Audio) when one is set up.
         bool spatialize = !string.IsNullOrEmpty(AudioSettings.GetSpatializerPluginName());
 
         voices = new AudioSource[voiceCount];
@@ -130,8 +129,6 @@ public class SoundManager : MonoBehaviour
             ambientFade = FadeIn(ambientFade, ambientFadeIn);
             ambientSource.volume = ambientVolume * ambienceSetting * ambientFade;
         }
-
-        // The fire is part of the ambience, so it follows the ambience setting.
         if (fireSource.isPlaying)
         {
             fireFade = FadeIn(fireFade, fireFadeIn);
@@ -139,7 +136,6 @@ public class SoundManager : MonoBehaviour
         }
     }
 
-    // Fades in once; after that, setting changes are heard straight away.
     private static float FadeIn(float fade, float duration)
     {
         return duration > 0f ? Mathf.MoveTowards(fade, 1f, Time.deltaTime / duration) : 1f;
@@ -179,7 +175,6 @@ public class SoundManager : MonoBehaviour
         voice.Play();
     }
 
-    // A voice that isn't playing, or else the one that started longest ago.
     private AudioSource GetFreeVoice()
     {
         for (int i = 0; i < voices.Length; i++)
@@ -198,7 +193,6 @@ public class SoundManager : MonoBehaviour
         return oldest;
     }
 
-    // Random clip, never the same one twice in a row.
     private static AudioClip PickClip(AudioClip[] clips, ref int lastIndex)
     {
         if (clips == null || clips.Length == 0)

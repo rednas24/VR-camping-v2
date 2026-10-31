@@ -7,75 +7,35 @@ using UnityEngine.Rendering;
 public class GroundFog : MonoBehaviour
 {
     [Header("Area")]
-    [Tooltip("Radius (metres) of the fog area around this object.")]
     [SerializeField, Min(1f)] private float radius = 60f;
-
-    [Tooltip("Spacing (metres) between the points where the fog follows the ground. " +
-             "Smaller hugs the ground more closely but adds vertices.")]
     [SerializeField, Min(0.25f)] private float cellSize = 2.5f;
-
-    [Tooltip("Part of the radius used to fade the fog out towards its edge.")]
     [SerializeField, Range(0.05f, 1f)] private float edgeFade = 0.5f;
-
-    [Tooltip("Radius (metres) around this object kept free of fog, so the camp stays clear.")]
     [SerializeField, Min(0f)] private float clearRadius = 10f;
-
-    [Tooltip("Distance (metres) over which the fog fades in outside the clear area.")]
     [SerializeField, Min(0.1f)] private float clearFade = 6f;
 
     [Header("Layers")]
-    [Tooltip("More layers look smoother, but every layer is drawn over the screen again.")]
     [SerializeField, Range(2, 16)] private int layerCount = 8;
-
-    [Tooltip("How high above the ground the fog reaches (metres).")]
     [SerializeField, Min(0.1f)] private float height = 1.1f;
 
     [Header("Ground Detection")]
     [SerializeField] private LayerMask groundLayers = ~0;
-
-    [Tooltip("Colliders narrower than this (metres) count as props, not ground.")]
     [SerializeField, Min(0f)] private float minGroundSize = 8f;
-
-    [Tooltip("Ground further than this above or below this object is ignored, " +
-             "so the fog does not climb mountains or pour down cliffs.")]
     [SerializeField, Min(0.1f)] private float maxGroundOffset = 2.5f;
 
     [Header("Look")]
     [SerializeField, ColorUsage(false)] private Color color = new Color(0.74f, 0.80f, 0.87f);
-
-    [Tooltip("How thick the fog is. Fog you look across builds up much more " +
-             "than fog you look straight down into.")]
     [SerializeField, Range(0f, 3f)] private float density = 0.35f;
-
-    [Tooltip("How much of the ground has fog clumps on it (lower = more clear " +
-             "ground between them). Higher also makes the clumps taller.")]
     [SerializeField, Range(0f, 1f)] private float coverage = 0.75f;
-
-    [Tooltip("How lumpy the tops of the clumps are.")]
     [SerializeField, Range(0f, 1.5f)] private float wispiness = 0.55f;
-
-    [Tooltip("Scale (metres) of the fog pattern. Bigger gives fewer, larger clumps.")]
     [SerializeField, Min(0.5f)] private float patchSize = 14f;
-
-    [Tooltip("How much darker and bluer the bottom of each clump is than its top. " +
-             "This is what makes the clumps look solid instead of flat.")]
     [SerializeField, Range(0f, 1f)] private float clumpShading = 0.45f;
-
-    [Tooltip("How far (metres) the layers bend up and down, so the fog doesn't " +
-             "look like stacked flat sheets when you look across it.")]
     [SerializeField, Range(0f, 0.3f)] private float layerWave = 0.08f;
-
     [SerializeField] private Vector2 windDirection = new Vector2(1f, 0.3f);
     [SerializeField, Min(0f)] private float windSpeed = 0.25f;
 
     [Header("Sun")]
-    [Tooltip("Glow when looking towards the sun.")]
     [SerializeField, Range(0f, 2f)] private float sunScattering = 0.6f;
-
-    [Tooltip("How much darker the fog is in shadow. Gives soft light shafts between trees.")]
     [SerializeField, Range(0f, 1f)] private float shadowStrength = 0.35f;
-
-    // Serialised so the shader is included in builds.
     [SerializeField, HideInInspector] private Shader shader;
 
     private const string ShaderName = "VR Camping/Ground Fog";
@@ -106,7 +66,6 @@ public class GroundFog : MonoBehaviour
     private bool needsRebuild;
     private int builtGeometryKey;
 
-    // 0 = no fog, 1 = full fog.
     public void SetAmount(float value)
     {
         amount = Mathf.Clamp01(value);
@@ -156,7 +115,6 @@ public class GroundFog : MonoBehaviour
 
         ApplyMaterialProperties();
 
-        // Built on the next Update, once every ground collider in the scene exists.
         needsRebuild = true;
 
 #if UNITY_EDITOR
@@ -197,7 +155,6 @@ public class GroundFog : MonoBehaviour
 
     private void Update()
     {
-        // In the editor, follow the object when it is moved around.
         if (!Application.isPlaying && transform.hasChanged)
         {
             transform.hasChanged = false;
@@ -262,7 +219,6 @@ public class GroundFog : MonoBehaviour
                 }
             }
 
-            // Skip cells that are fully faded out, so they cost nothing to draw.
             for (int z = 0; z < cells; z++)
             {
                 for (int x = 0; x < cells; x++)
@@ -291,9 +247,6 @@ public class GroundFog : MonoBehaviour
         mesh.SetUVs(0, layerAndFade);
         mesh.SetTriangles(triangles, 0);
         mesh.RecalculateBounds();
-
-        // The shader bends the layers up and down, so leave room for the
-        // largest bend or the fog gets culled while still on screen.
         Bounds bounds = mesh.bounds;
         bounds.Expand(new Vector3(0f, 0.6f, 0f));
         mesh.bounds = bounds;
@@ -302,8 +255,6 @@ public class GroundFog : MonoBehaviour
         ApplyMaterialProperties();
     }
 
-    // Finds the top of the ground under every grid point. Returns false if
-    // there was no ground at all.
     private bool SampleGround(int size, float step, Vector3 centre, float[] heights, float[] edgeFades)
     {
         Physics.SyncTransforms();
@@ -346,7 +297,6 @@ public class GroundFog : MonoBehaviour
                 heights[i] = found[i] ? top : centre.y;
                 anyFound |= found[i];
 
-                // Fades in outside the clear camp area and out again towards the edge.
                 float distance = new Vector2(origin.x - centre.x, origin.z - centre.z).magnitude;
                 float outer = Mathf.SmoothStep(1f, 0f, Mathf.InverseLerp(1f - edgeFade, 1f, distance / radius));
                 float inner = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(clearRadius, clearRadius + clearFade, distance));
@@ -356,9 +306,6 @@ public class GroundFog : MonoBehaviour
 
         FillMissingHeights(size, heights, found);
         SmoothHeights(size, heights);
-
-        // Fade out over a couple of cells where the ground ends (cliff edges),
-        // instead of stopping in a hard line.
         var groundMask = new float[size * size];
         for (int i = 0; i < groundMask.Length; i++)
             groundMask[i] = found[i] ? 1f : 0f;
@@ -372,8 +319,6 @@ public class GroundFog : MonoBehaviour
         return anyFound;
     }
 
-    // Big static colliders are ground; small ones are props such as rocks,
-    // logs, trees and the table, which the fog should flow around.
     private bool IsGround(Collider candidate)
     {
         if (candidate.attachedRigidbody != null && !candidate.attachedRigidbody.isKinematic)
@@ -383,8 +328,6 @@ public class GroundFog : MonoBehaviour
         return Mathf.Min(size.x, size.z) >= minGroundSize;
     }
 
-    // Gives points without ground the height of their nearest neighbours,
-    // so the faded-out edge of the fog doesn't jump to a different height.
     private static void FillMissingHeights(int size, float[] heights, bool[] found)
     {
         var known = (bool[])found.Clone();
@@ -438,9 +381,6 @@ public class GroundFog : MonoBehaviour
                 break;
         }
     }
-
-    // Softens the low-poly bumps, but never pushes the fog below the real
-    // ground, where it would cut a line into the grass.
     private static void SmoothHeights(int size, float[] heights)
     {
         float[] blurred = Blur(size, heights);
@@ -509,8 +449,6 @@ public class GroundFog : MonoBehaviour
         material.SetFloat(SunScatteringId, sunScattering);
         material.SetFloat(ShadowStrengthId, shadowStrength);
         material.SetTexture(NoiseTexId, noiseTexture);
-
-        // No fog means nothing to draw, so it costs nothing for the rest of the day.
         if (meshRenderer != null)
             meshRenderer.forceRenderingOff = amount <= 0.001f;
     }
@@ -532,8 +470,6 @@ public class GroundFog : MonoBehaviour
         else
             DestroyImmediate(target);
     }
-
-    // ---- Noise texture ----
 
     private static Texture2D CreateNoiseTexture()
     {
