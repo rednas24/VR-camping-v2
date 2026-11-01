@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class SoundManager : MonoBehaviour
@@ -173,6 +174,36 @@ public class SoundManager : MonoBehaviour
         voice.volume = volume * sfxSetting;
         voice.pitch = 1f + Random.Range(-pitchVariation, pitchVariation);
         voice.Play();
+    }
+
+    public static void FadeOutAndDestroy(AudioSource source, float duration)
+    {
+        if (source == null)
+            return;
+
+        if (Instance == null || !Instance.isActiveAndEnabled || duration <= 0f)
+        {
+            Destroy(source.gameObject);
+            return;
+        }
+
+        Instance.StartCoroutine(FadeOutRoutine(source, duration));
+    }
+
+    private static IEnumerator FadeOutRoutine(AudioSource source, float duration)
+    {
+        float startVolume = source.volume;
+
+        for (float t = 0f; t < duration && source != null; t += Time.deltaTime)
+        {
+            source.volume = startVolume * (1f - t / duration);
+            yield return null;
+        }
+
+        if (source != null)
+        {
+            Destroy(source.gameObject);
+        }
     }
 
     private AudioSource GetFreeVoice()

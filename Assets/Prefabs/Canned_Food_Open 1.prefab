@@ -222,6 +222,10 @@ MonoBehaviour:
   eatingTime: 3
   minimumHeightAboveHead: 0.2
   requiredTiltAngle: 60
+  eatingSoundClip: {fileID: 8300000, guid: f5b6114b45f37534dbe9b0d05ca07f33, type: 3}
+  eatingSoundVolume: 0.8
+  eatingSoundFade: 0.25
+  eatingSoundEndFade: 1
 --- !u!114 &-5111045919278708560
 MonoBehaviour:
   m_ObjectHideFlags: 0

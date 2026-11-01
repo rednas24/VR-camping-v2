@@ -193,6 +193,9 @@ MonoBehaviour:
   popSound: {fileID: 0}
   popVFX: {fileID: 0}
   cookingSmoke: {fileID: 882322626182660967}
+  cookingSoundClip: {fileID: 8300000, guid: 65bed25b4cdbec94fb0521dd4e755519, type: 3}
+  cookingSoundVolume: 0.7
+  cookingSoundFade: 0.4
 --- !u!65 &8182534801044412598
 BoxCollider:
   m_ObjectHideFlags: 0

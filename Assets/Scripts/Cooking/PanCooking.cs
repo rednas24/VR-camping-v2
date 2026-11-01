@@ -22,11 +22,38 @@ public class PanCooking : MonoBehaviour
     [Header("Cooking Smoke")]
     public ParticleSystem cookingSmoke;
 
+    [Header("Cooking Sound")]
+    public AudioClip cookingSoundClip;
+    [Range(0f, 1f)] public float cookingSoundVolume = 0.7f;
+    [Min(0f)] public float cookingSoundFade = 0.4f;
+
     private bool canPlaced = false;
     private bool cooking = false;
     private bool cookingFinished = false;
 
     private float cookingTimer = 0f;
+
+    private AudioSource cookingAudio;
+    private float cookingAudioFade = 0f;
+
+    private void Awake()
+    {
+        if (cookingSoundClip == null)
+            return;
+
+        cookingAudio = gameObject.AddComponent<AudioSource>();
+        cookingAudio.clip = cookingSoundClip;
+        cookingAudio.loop = true;
+        cookingAudio.playOnAwake = false;
+        cookingAudio.spatialBlend = 1f;
+        cookingAudio.spatialize =
+            !string.IsNullOrEmpty(AudioSettings.GetSpatializerPluginName());
+        cookingAudio.rolloffMode = AudioRolloffMode.Logarithmic;
+        cookingAudio.minDistance = 1f;
+        cookingAudio.maxDistance = 20f;
+        cookingAudio.dopplerLevel = 0f;
+        cookingAudio.volume = 0f;
+    }
 
     public void CanPlaced()
     {
@@ -50,6 +77,11 @@ public class PanCooking : MonoBehaviour
             cookingSmoke.Play();
         }
 
+        if (cookingAudio != null && !cookingAudio.isPlaying)
+        {
+            cookingAudio.Play();
+        }
+
         Debug.Log("Can is cooking!");
     }
 
@@ -70,6 +102,8 @@ public class PanCooking : MonoBehaviour
 
     private void Update()
     {
+        UpdateCookingSound();
+
         if (!cooking)
             return;
 
@@ -78,6 +112,29 @@ public class PanCooking : MonoBehaviour
         if (cookingTimer >= cookingTime)
         {
             FinishCooking();
+        }
+    }
+
+    private void UpdateCookingSound()
+    {
+        if (cookingAudio == null || !cookingAudio.isPlaying)
+            return;
+
+        float target = cooking ? 1f : 0f;
+
+        cookingAudioFade = cookingSoundFade > 0f
+            ? Mathf.MoveTowards(cookingAudioFade, target, Time.deltaTime / cookingSoundFade)
+            : target;
+
+        float sfxSetting = SoundManager.Instance != null
+            ? SoundManager.Instance.SfxVolume
+            : 1f;
+
+        cookingAudio.volume = cookingSoundVolume * sfxSetting * cookingAudioFade;
+
+        if (!cooking && cookingAudioFade <= 0f)
+        {
+            cookingAudio.Stop();
         }
     }
 
@@ -102,7 +159,6 @@ public class PanCooking : MonoBehaviour
             return;
         }
 
-        // Prevent cooking and completion from running twice.
         cooking = false;
         cookingFinished = true;
         canPlaced = false;
@@ -114,13 +170,11 @@ public class PanCooking : MonoBehaviour
 
         Debug.Log("Can finished cooking!");
 
-        // Preserve the original can's world position and rotation.
         Vector3 spawnPosition = closedCan.transform.position;
         Quaternion spawnRotation = closedCan.transform.rotation;
 
         closedCan.SetActive(false);
 
-        // Detach and position the cooked can.
         openCan.transform.SetParent(null);
         openCan.transform.SetPositionAndRotation(
             spawnPosition,
@@ -129,7 +183,6 @@ public class PanCooking : MonoBehaviour
 
         openCan.SetActive(true);
 
-        // Advance the day cycle on successful cooking completion.
         if (DayCycleManager.Instance != null)
         {
             DayCycleManager.Instance.CompleteFoodObjective();
