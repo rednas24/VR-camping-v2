@@ -184,4 +184,13 @@ public class MicrogestureMovement : MonoBehaviour
         velocity.z = 0f;
         locomotor.Velocity = velocity;
     }
+
+    private void OnDisable()
+{
+    walkDirection = 0;
+    currentSpeed = 0f;
+    if (wasMoving && locomotor != null)
+        StopHorizontalMovement();
+    wasMoving = false;
+}
 }

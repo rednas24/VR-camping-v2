@@ -1,8 +1,34 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 public class SettingsControls : MonoBehaviour
 {
+    [Header("Movement Mode")]
+
+    [SerializeField] 
+    private Toggle movementToggle;
+
+    [SerializeField] 
+    private MicrogestureMovement microgestureMovement;
+
+    [SerializeField] 
+    private GameObject[] teleportObjects;
+
+    [SerializeField] 
+    private bool startWithTeleport = false;
+
+    [Header("Tutorial Screen")]
+
+    [SerializeField]
+    private VideoPlayer screenVideo;
+
+    [SerializeField]
+    private VideoClip teleportVideo;
+
+    [SerializeField]
+    private VideoClip microgestureVideo;
+
     [Header("Sound")]
     [SerializeField]
     private Slider ambienceSlider;
@@ -58,6 +84,13 @@ public class SettingsControls : MonoBehaviour
         {
             resetButton.onClick.AddListener(ResetItems);
         }
+        
+        if (movementToggle != null)
+        {
+            movementToggle.SetIsOnWithoutNotify(startWithTeleport);
+            movementToggle.onValueChanged.AddListener(SetTeleportMode);
+        }
+        SetTeleportMode(startWithTeleport);
     }
 
     private void OnAmbienceChanged(float value)
@@ -130,5 +163,37 @@ public class SettingsControls : MonoBehaviour
 
         if (resetButton != null)
             resetButton.onClick.RemoveListener(ResetItems);
+
+        if (movementToggle != null)
+            movementToggle.onValueChanged.RemoveListener(SetTeleportMode);
+    }
+
+    public void SetTeleportMode(bool useTeleport)
+    {
+        if (microgestureMovement != null)
+            microgestureMovement.enabled = !useTeleport;
+
+        foreach (GameObject obj in teleportObjects)
+            if (obj != null) obj.SetActive(useTeleport);
+
+        UpdateScreenVideo(useTeleport);
+    }
+
+    private void UpdateScreenVideo(bool useTeleport)
+    {
+        if (screenVideo == null)
+            return;
+
+        VideoClip clip = useTeleport ? teleportVideo : microgestureVideo;
+
+        if (clip == null || screenVideo.clip == clip)
+            return;
+
+        bool wasPlaying = screenVideo.isPlaying;
+        screenVideo.Stop();
+        screenVideo.clip = clip;
+
+        if (wasPlaying)
+            screenVideo.Play();
     }
 }
