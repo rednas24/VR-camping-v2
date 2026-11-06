@@ -625,6 +625,8 @@ MonoBehaviour:
   fireParticles: {fileID: 2578592905117882413}
   woodManager: {fileID: 5855932376139424547}
   cookingZone: {fileID: 8299767396436084673}
+  dropsToPutOut: 45
+  steam: {fileID: 0}
   ignitionTime: 1
 --- !u!1 &7058602689533393999
 GameObject:

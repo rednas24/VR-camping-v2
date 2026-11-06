@@ -21,9 +21,13 @@ public class SleepInTent : MonoBehaviour
     [SerializeField] private Button yesButton;
     [SerializeField] private Button noButton;
 
+    [Header("Fire")]
+    [SerializeField] private FireIgnitionZone fire;
+
     [Header("Messages")]
     [SerializeField, TextArea] private string notNightMessage = "You're not tired yet";
     [SerializeField, TextArea] private string sleepQuestion = "Go to sleep?";
+    [SerializeField, TextArea] private string fireStillLitMessage = "You can't sleep yet.\nPut out the fire with the canteen.";
 
     [Header("Ending")]
     [SerializeField] private OVRScreenFade screenFade;
@@ -36,9 +40,14 @@ public class SleepInTent : MonoBehaviour
 
     private bool IsNight =>
         DayCycleManager.Instance != null && DayCycleManager.Instance.IsNight;
+    
+    private bool IsFireLit => fire != null && fire.IsLit;
 
     private void Start()
     {
+        if (fire == null)
+            Debug.LogWarning("SleepInTent: Fire is not assigned, so the player can sleep with the fire lit.", this);
+
         HidePrompt();
 
         if (yesButton != null) yesButton.onClick.AddListener(OnYes);
@@ -67,10 +76,12 @@ public class SleepInTent : MonoBehaviour
         if (dismissed || timeInZone < promptDelay)
             return;
 
-        if (IsNight)
-            ShowPrompt(sleepQuestion, true);
-        else
+        if (!IsNight)
             ShowPrompt(notNightMessage, false);
+        else if (IsFireLit)
+            ShowPrompt(fireStillLitMessage, false);
+        else
+            ShowPrompt(sleepQuestion, true);
     }
 
     private void ShowPrompt(string message, bool canSleep)
@@ -93,7 +104,7 @@ public class SleepInTent : MonoBehaviour
 
     private void OnYes()
     {
-        if (isSleeping || !IsNight)
+        if (isSleeping || !IsNight || IsFireLit)
             return;
 
         HidePrompt();

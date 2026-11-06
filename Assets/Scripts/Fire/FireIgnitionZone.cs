@@ -9,11 +9,17 @@ public class FireIgnitionZone : MonoBehaviour
     [Header("Cooking")]
     public GameObject cookingZone;
 
+    [Header("Putting Out")]
+    [Min(1)] public int dropsToPutOut = 45;
+    public ParticleSystem steam;
+
     public float ignitionTime = 1f;
 
     private float timer = 0f;
     private bool lighterInside = false;
     private bool fireLit = false;
+    private int dropsReceived = 0;
+    public bool IsLit => fireLit;
 
     private void Start()
     {
@@ -39,7 +45,6 @@ public class FireIgnitionZone : MonoBehaviour
             return;
         }
 
-        // Wait until all required wood has been placed.
         if (woodManager == null || !woodManager.IsComplete)
         {
             timer = 0f;
@@ -97,12 +102,51 @@ public class FireIgnitionZone : MonoBehaviour
             SoundManager.Instance.StartFireLoop(soundPosition);
         }
 
-        // Advance the day cycle only when ignition succeeds.
         if (DayCycleManager.Instance != null)
         {
             DayCycleManager.Instance.CompleteFireObjective();
         }
 
         Debug.Log("Bonfire ignited!");
+    }
+
+    public void AddWater(int drops)
+    {
+        if (!fireLit)
+            return;
+
+        if (steam != null)
+            steam.Emit(drops*2);
+
+        dropsReceived += drops;
+
+        if (dropsReceived >= dropsToPutOut)
+            PutOutFire();
+    }
+
+    private void PutOutFire()
+    {
+        fireLit = false;
+        timer = 0f;
+        dropsReceived = 0;
+
+        if (fireParticles != null)
+            fireParticles.SetActive(false);
+
+        PanCooking pan = FindAnyObjectByType<PanCooking>();
+
+        if (pan != null)
+            pan.StopCooking();
+
+        if (cookingZone != null)
+            cookingZone.SetActive(false);
+
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.StopFireLoop();
+
+        if (steam != null)
+            steam.Emit(40);
+
+        Debug.Log("Bonfire put out!");
     }
 }
