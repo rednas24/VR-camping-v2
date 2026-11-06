@@ -51,6 +51,7 @@ public class DayCycleManager : MonoBehaviour
             return count;
         }
     }
+    public bool IsNight => CompletedObjectives >= 3;
 
     public string CurrentTimeOfDay
     {

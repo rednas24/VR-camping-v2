@@ -157,6 +157,15 @@ public class SoundManager : MonoBehaviour
         fireSource.Play();
     }
 
+    public void StopFireLoop()
+        {
+            if (fireSource == null)
+                return;
+
+            fireSource.Stop();
+            fireFade = 0f;
+        }
+
     public void PlayChop(Vector3 position, float loudness = 1f)
     {
         PlayAt(PickClip(chopClips, ref lastChopClip), position, chopVolume * Mathf.Clamp01(loudness));
