@@ -26,6 +26,9 @@ public class DayCycleManager : MonoBehaviour
     [Header("Wood Objective")]
     [SerializeField, Min(1)] private int requiredWoodPieces = 3;
 
+    [Header("Ambience")]
+    [SerializeField] private AnimationCurve ambienceVolumeCurve = AnimationCurve.Linear(0f, 1f, 1f, 0.25f);
+
     private int choppedWoodPieces;
 
     private bool woodCompleted;
@@ -196,6 +199,9 @@ public class DayCycleManager : MonoBehaviour
 
         if (groundFog != null)
             groundFog.SetAmount(fogAmountCurve.Evaluate(progress));
+
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.DayVolume = ambienceVolumeCurve.Evaluate(progress);
     }
 
     private void OnDestroy()

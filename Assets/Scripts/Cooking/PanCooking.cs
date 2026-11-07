@@ -14,6 +14,8 @@ public class PanCooking : MonoBehaviour
     public float popForce = 2f;
     public float popTorque = 1.5f;
     public float randomSideForce = 0.2f;
+    public Transform playerHead;
+    public float popSideways = 0.5f;
 
     [Header("Optional Effects")]
     public AudioSource popSound;
@@ -26,6 +28,7 @@ public class PanCooking : MonoBehaviour
     public AudioClip cookingSoundClip;
     [Range(0f, 1f)] public float cookingSoundVolume = 0.7f;
     [Min(0f)] public float cookingSoundFade = 0.4f;
+    
 
     private bool canPlaced = false;
     private bool cooking = false;
@@ -208,12 +211,21 @@ public class PanCooking : MonoBehaviour
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
 
-            Vector3 popDirection = transform.up;
+            Vector3 popDirection = Vector3.up;
 
-            popDirection += transform.right *
+            if (playerHead != null)
+            {
+                Vector3 towardsPlayer = Vector3.ProjectOnPlane(
+                    playerHead.position - spawnPosition,
+                    Vector3.up);
+
+                popDirection += towardsPlayer.normalized * popSideways;
+            }
+
+            popDirection += Vector3.right *
                 Random.Range(-randomSideForce, randomSideForce);
 
-            popDirection += transform.forward *
+            popDirection += Vector3.forward *
                 Random.Range(-randomSideForce, randomSideForce);
 
             popDirection.Normalize();

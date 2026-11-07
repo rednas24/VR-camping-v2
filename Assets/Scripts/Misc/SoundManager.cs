@@ -37,7 +37,6 @@ public class SoundManager : MonoBehaviour
 
     [SerializeField, Range(1, 16)] private int voiceCount = 6;
 
-    // Set by the settings sign, applied on top of the volumes above.
     [Header("Player Settings")]
     [SerializeField, Range(0f, 1f)] private float ambienceSetting = 1f;
 
@@ -53,6 +52,14 @@ public class SoundManager : MonoBehaviour
     {
         get => sfxSetting;
         set => sfxSetting = Mathf.Clamp01(value);
+    }
+
+    private float dayVolume = 1f;
+
+    public float DayVolume
+    {
+        get => dayVolume;
+        set => dayVolume = Mathf.Clamp01(value);
     }
 
     private AudioSource ambientSource;
@@ -128,7 +135,7 @@ public class SoundManager : MonoBehaviour
         if (ambientSource.isPlaying)
         {
             ambientFade = FadeIn(ambientFade, ambientFadeIn);
-            ambientSource.volume = ambientVolume * ambienceSetting * ambientFade;
+            ambientSource.volume = ambientVolume * ambienceSetting * ambientFade * dayVolume;
         }
         if (fireSource.isPlaying)
         {
