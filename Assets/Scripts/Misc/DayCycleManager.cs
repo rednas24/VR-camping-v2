@@ -90,7 +90,6 @@ public class DayCycleManager : MonoBehaviour
         if (groundFog == null)
             groundFog = FindAnyObjectByType<GroundFog>();
 
-        // The sky/equator/ground colours are only used in Gradient mode.
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
     }
 

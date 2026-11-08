@@ -26,7 +26,9 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _EMISSION
+  - _ENVIRONMENTREFLECTIONS_OFF
   - _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+  - _SPECULARHIGHLIGHTS_OFF
   m_InvalidKeywords:
   - _DISABLE_SSR_TRANSPARENT
   - _EMISSIVE_COLOR_MAP
@@ -237,7 +239,7 @@ Material:
     - _EnableFogOnTransparent: 1
     - _EnableGeometricSpecularAA: 0
     - _EnergyConservingSpecularColor: 1
-    - _EnvironmentReflections: 1
+    - _EnvironmentReflections: 0
     - _GlossMapScale: 0.387
     - _Glossiness: 1
     - _GlossyReflections: 1
@@ -284,7 +286,7 @@ Material:
     - _SmoothnessTextureChannel: 1
     - _SpecularAAScreenSpaceVariance: 0.1
     - _SpecularAAThreshold: 0.2
-    - _SpecularHighlights: 1
+    - _SpecularHighlights: 0
     - _SpecularOcclusionMode: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1

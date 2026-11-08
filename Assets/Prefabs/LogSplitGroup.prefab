@@ -204,6 +204,7 @@ GameObject:
   - component: {fileID: 8203296030420145771}
   - component: {fileID: 7398711916581168338}
   - component: {fileID: 3729516196883130026}
+  - component: {fileID: 9177776074161080024}
   m_Layer: 0
   m_Name: Log HalfRight
   m_TagString: Untagged
@@ -373,6 +374,7 @@ MonoBehaviour:
   splitSpawnPoint: {fileID: 0}
   splitForce: 0.3
   splitTorque: 0.4
+  countsTowardsWoodObjective: 1
 --- !u!114 &7147176104412971344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -390,6 +392,7 @@ MonoBehaviour:
   snapPose: {fileID: 8914186274935515171}
   positionTolerance: 1
   rotationTolerance: 5
+  maxSettleTime: 1
 --- !u!65 &8203296030420145771
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -470,6 +473,18 @@ MonoBehaviour:
   _movementProvider: {fileID: 0}
   _handAligment: 1
   _handGrabPoses: []
+--- !u!114 &9177776074161080024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2634935051209624406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7bc7ba7359eb434daaabecc1126b930, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AlwaysFullDetail
 --- !u!1 &2689987108856358294
 GameObject:
   m_ObjectHideFlags: 0
@@ -553,6 +568,7 @@ GameObject:
   - component: {fileID: 2445382978233618766}
   - component: {fileID: 7140983029425753664}
   - component: {fileID: 8840986227051697471}
+  - component: {fileID: 9186133454800640890}
   m_Layer: 0
   m_Name: Log HalfLeft
   m_TagString: Untagged
@@ -722,6 +738,7 @@ MonoBehaviour:
   splitSpawnPoint: {fileID: 0}
   splitForce: 0.3
   splitTorque: 0.4
+  countsTowardsWoodObjective: 1
 --- !u!114 &1042575179419375256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -739,6 +756,7 @@ MonoBehaviour:
   snapPose: {fileID: 4412734867036548499}
   positionTolerance: 1
   rotationTolerance: 5
+  maxSettleTime: 1
 --- !u!65 &2445382978233618766
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -819,6 +837,18 @@ MonoBehaviour:
   _grabSource: {fileID: 0}
   _resetGrabOnGrabsUpdated: 1
   _movementProvider: {fileID: 0}
+--- !u!114 &9186133454800640890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3900442209761184919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7bc7ba7359eb434daaabecc1126b930, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AlwaysFullDetail
 --- !u!1 &4587992321013756513
 GameObject:
   m_ObjectHideFlags: 0
